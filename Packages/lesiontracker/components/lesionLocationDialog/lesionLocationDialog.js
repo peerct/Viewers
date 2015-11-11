@@ -9,8 +9,7 @@ function getLesionLocationCallback(measurementData, eventData, doneCallback) {
     var selector = lesionDialog.find("select#selectLesionLocation");
 
     // Get the current element's timepointID
-    // TODO: Change this when we are no longer storing timepointID in the viewport element DOM data
-    measurementData.timepointID = $(eventData.element).data('timepointID');
+    measurementData.timepointID = getTimepointIdFromElement(eventData.element);
 
     // Get a lesion number for this lesion, depending on whether or not the same lesion previously
     // exists at a different timepoint

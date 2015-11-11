@@ -5,7 +5,8 @@ Timepoints = new Meteor.Collection(null);
 function nonTargetToolAdded(e, eventData, lesionData) {
 
     // Set timepointID
-    lesionData.timepointID = $(e.currentTarget).data('timepointID');
+    var element = e.currentTarget;
+    lesionData.timepointID = getTimepointIdFromElement(element);
 
     var locationUID = measurementManagerDAL.isLesionNumberAdded(lesionData);
     if (locationUID) {
@@ -60,7 +61,7 @@ function updateLesions(e) {
         // Get the timepointID related to the image viewer viewport
         // from the DOM itself. This will be changed later when a
         // real association between viewports and timepoints is created.
-        var timepointID = $(element).data('timepointID');
+        var timepointID = getTimepointIdFromElement(element);
         var timepointObject = timepoints[timepointID];
 
         // Defines event data
@@ -95,27 +96,39 @@ function updateLesions(e) {
     });
 }
 
+getStudyDateString = function(element) {
+    var enabledElement = cornerstone.getEnabledElement(element);
+    if (!enabledElement || !enabledElement.image) {
+        return;
+    }
+
+    var imageId = enabledElement.image.imageId;
+    var studyMetaData = cornerstoneTools.metaData.get('study', imageId);
+    var studyDateString = moment(studyMetaData.studyDate).format('YYYY/MM/DD');
+    return studyDateString;
+};
+
+getTimepointIdFromElement = function(element) {
+    var studyDateString = getStudyDateString(element);
+
+    var timepointID;
+    var existingTimepoint = Timepoints.findOne({timepointName: studyDateString});
+    if (existingTimepoint) {
+        timepointID = existingTimepoint._id;
+    } else {
+        // Adds location data to PatientLocation and retrieve the location ID
+        timepointID = Timepoints.insert({timepointName: studyDateString});
+    }
+
+    return timepointID;
+};
+
 Template.lesionTable.onRendered(function() {
-    // For the moment we will associate the timepoint
-    // with the viewport element by storing the timepointID
-    // inside the element's DOM data. This is temporary.
     $(".imageViewerViewport").each(function(index, element) {
-        var timepointID = uuid.v4();
-
-        var timepointName = "Baseline";
-        if (index > 0) {
-            timepointName = "Current"; //"Follow Up "+i;
-        }
-
-
         // FUTURE = On load series data into viewport, create a new timepoint
         // unless it already exists
-        Timepoints.insert({
-            timepointID: timepointID,
-            timepointName: timepointName
-        });
-
-        $(element).data('timepointID', timepointID);
+        
+        var timepointID = getTimepointIdFromElement(element);
 
         // Listen NonTargetToolAdded Event
         $(element).on("NonTargetToolAdded", nonTargetToolAdded);

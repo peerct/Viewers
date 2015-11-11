@@ -12,7 +12,7 @@ var measurementManagerDAL = (function() {
         var timepointsObject = {};
 
         for (var i = 0; i < timepoints.length; i++) {
-            var timepointId = timepoints[i].timepointID;
+            var timepointId = timepoints[i]._id;
             var lesionTimepointId = lesionData.timepointID;
 
             var timepointObject;

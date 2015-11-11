@@ -1,5 +1,4 @@
 var activeLesionMeasurementData;
-var timepointID;
 var cornerstoneTools = (function($, cornerstone, cornerstoneMath, cornerstoneTools) {
 
     "use strict";
@@ -140,7 +139,6 @@ var cornerstoneTools = (function($, cornerstone, cornerstoneMath, cornerstoneToo
     }
     ///////// BEGIN IMAGE RENDERING ///////
     function onImageRendered(e, eventData) {
-
         suscribeLesionToolSelectedEvent(e.currentTarget);
 
         // if we have no toolData for this element, return immediately as there is nothing to do
