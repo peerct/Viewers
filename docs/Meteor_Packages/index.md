@@ -1,4 +1,4 @@
-### Cornerstone Family of Libraries ([*cornerstone*](/Meteor_Packages/Cornerstone.html))
+### Cornerstone Family of Libraries (*cornerstone*)
 This package contains a number of front-end libraries that help us build web-based medical imaging applications.
 
 ### DICOM Web Helper Functions (*dicomweb*)
