@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<!--[if lt IE 7]>       <html class="no-js ie6 oldie" lang="en"> <![endif]-->
+<!--[if IE 7]>          <html class="no-js ie7 oldie" lang="en"> <![endif]-->
+<!--[if IE 8]>          <html class="no-js ie8 oldie" lang="en"> <![endif]-->
+<!--[if gt IE 8]><!-->  <html class="no-js" lang="en"> <!--<![endif]-->
+<head>
+    <title>Meteor Packages</title>
+    <meta name="description" content="Open Source Solutions for Modern Healthcare" />
+    <meta name="author" content="Open Health Imaging Foundation">
+    <meta charset="UTF-8">
+    <link rel="icon" href="../templates/default/themes/ohif/img/favicon-navy.png" type="image/x-icon">
+    <!-- Mobile -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Font -->
+    <link href='//fonts.googleapis.com/css?family=Roboto+Slab:400,100,300,700&subset=latin,cyrillic-ext,cyrillic' rel='stylesheet' type='text/css'><link href='http://fonts.googleapis.com/css?family=Sanchez:400,700&subset=latin,latin-ext' rel='stylesheet' type='text/css'>
+    <!-- CSS -->
+    <link href='../templates/default/themes/ohif/css/ohif.css' rel='stylesheet' type='text/css'>
+</head>
+<body>
+            <!-- Docs -->
+                    <a href="https://github.com/OHIF/Viewers" target="_blank" id="github-ribbon" class="hidden-print"><img src="https://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png" alt="Fork me on GitHub"></a>
+                <div class="container-fluid fluid-height wrapper">
+            <div class="navbar navbar-fixed-top hidden-print">
+                <div class="container-fluid">
+                    <a class="brand navbar-brand pull-left" href="../index">Open Health Imaging Foundation</a>
+                </div>
+            </div>
+            <div class="row columns content">
+                <div class="left-column article-tree col-sm-3 hidden-print">
+                    <!-- For Mobile -->
+                    <div class="responsive-collapse">
+                        <button type="button" class="btn btn-sidebar" id="menu-spinner-button">
+                            <span class="icon-bar"></span>
+                            <span class="icon-bar"></span>
+                            <span class="icon-bar"></span>
+                        </button>
+                    </div>
+                    <div id="sub-nav-collapse" class="sub-nav-collapse">
+                        <!-- Navigation -->
+                        <ul class="nav nav-list"><li><a href="../Structure.html">Structure</a></li><li class="open"><a href="../Meteor_Packages/index.html" class="folder">Meteor Packages</a><ul class="nav nav-list"><li><a href="../Meteor_Packages/Cornerstone.html">Cornerstone</a></li></ul></li><li><a href="../Usage/index.html" class="folder">Usage</a><ul class="nav nav-list"><li><a href="../Usage/Dependencies.html">Dependencies</a></li><li><a href="../Usage/Docker_Usage.html">Docker Usage</a></li></ul></li></ul>                                                    <div class="well well-sidebar">
+
+                                <!-- Links -->
+                                <a href="https://github.com/OHIF/Viewers/archive/master.zip" target="_blank">Download</a><br><a href="https://github.com/OHIF/Viewers" target="_blank">GitHub Repo</a><br><a href="https://github.com/OHIF/Viewers/issues" target="_blank">Help/Support/Bugs</a><br><a href="http://forum.ohif.org" target="_blank">OHIF Community Forum</a><br>                                <a href="#" id="toggleCodeBlockBtn" onclick="toggleCodeBlocks();">Show Code Blocks Inline</a><br>
+                                <!-- Twitter -->
+                                                            </div>
+                                            </div>
+                </div>
+                <div class="right-column float-view content-area col-sm-9">
+                    <div class="content-page">
+                        <article>
+                                                            <div class="page-header sub-header clearfix">
+                                    <h1><a href="../Meteor_Packages">Meteor Packages</a>                                                                            </h1>
+                                    <span style="float: left; font-size: 10px; color: gray;">
+                                        Tuesday, November 17, 2015                                    </span>
+                                    <span style="float: right; font-size: 10px; color: gray;">
+                                        4:08 AM                                    </span>
+                                </div>
+                            
+                            <h3>Cornerstone Family of Libraries (<a href="/Meteor_Packages/Cornerstone"><em>cornerstone</em></a>)</h3>
+<p>This package contains a number of front-end libraries that help us build web-based medical imaging applications.</p>
+<h3>DICOM Web Helper Functions (<em>dicomweb</em>)</h3>
+<p>This is the smallest package in the repository. It contains a number of helper functions for retrieving common value types (e.g. JSON, patient name, image frame) from a DICOM image. This package is for server-side usage.</p>
+<h3>Tabbed Study Work List (<em>worklist</em>)</h3>
+<p>This package holds Meteor components and functions for the tabbed Work List structure found in the bundled applications. The Work List package is responsible for searching and displaying results in the worklist and creating / deleting tabs. Upon tab creation / focus, the Viewer template is rendered into the tab container with the set of specified studies. When the tab is changed, the entire Viewer is removed from the DOM tree.</p>
+<h3>Basic Viewer Components (<em>viewerbase</em>)</h3>
+<p>This is the largest package in the repository. It holds a large number of re-usable Meteor components that are used to build both the OHIF Viewer and Lesion Tracker.</p>
+<h3>Lesion Tracker (<em>lesiontracker</em>)</h3>
+<p>This package stores all of the oncology-specific tools and functions developed for the Lesion Tracker application. Here we store, for example, the Target measurement and Non-target pointer tools that are used to monitor tumour burden over time.</p>
+<p>This package also stores Meteor components for the interactive lesion table used in the Lesion Tracker, and dialog boxes for the callbacks attached to the Target and Non-target tools.</p>                                                    </article>
+                    </div>
+                </div>
+            </div>
+        </div>
+    
+        
+
+    <!-- jQuery -->
+            <script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
+        <script>
+            if (typeof jQuery == 'undefined')
+                document.write(unescape("%3Cscript src='../js/jquery-1.11.0.min.js' type='text/javascript'%3E%3C/script%3E"));
+        </script>
+    <script src="../js/bootstrap.min.js"></script>
+    <!-- hightlight.js -->
+    <script src="../js/highlight.min.js"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
+
+    <!-- JS -->
+    
+    <!-- Front end file editor -->
+        <script src="../js/custom.js"></script>
+    <!--[if lt IE 9]>
+        <script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
+</body>
+</html>
+
