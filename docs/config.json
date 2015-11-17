@@ -5,7 +5,7 @@
     "image": "<base_url>img/app.png",
     "logo": "<base_url>img/logo.png",
     "theme": "ohif",
-    "template": "ohif",
+    "template": "default",
     "clean_urls": true,
     "toggle_code": true,
     "breadcrumbs": true,

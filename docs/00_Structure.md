@@ -3,7 +3,7 @@ This repository holds two distinct applications:
 1. The **OHIF Viewer**: A general purpose DICOM Viewer ([demo](http://viewer.ohif.org/))
 2. **Lesion Tracker**: An oncology-focused imaging application ([demo](http://lesiontracker.ohif.org/))
 
-It also contains several [Meteor Packages](/Meteor_Packages/) which are used to build both of these applications.
+It also contains several [Meteor Packages](Meteor_Packages) which are used to build both of these applications.
 
 ## OHIF Viewer Goals
 
