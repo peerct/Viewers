@@ -106,6 +106,7 @@ Package.onUse(function (api) {
     api.addFiles('lib/rerenderViewportWithNewSeries.js', 'client');
     api.addFiles('lib/sortStudy.js', 'client');
     api.addFiles('lib/toolManager.js', 'client');
+    api.addFiles('lib/hangingprotocols.js', 'client');
     api.addFiles('lib/windowManager.js', 'client');
 
     //api.export('accountsConfig', 'client');
@@ -118,11 +119,13 @@ Package.onUse(function (api) {
     api.export('rerenderViewportWithNewSeries', 'client');
     api.export('sortStudy', 'client');
     api.export('updateOrientationMarkers', 'client');
+    api.export('getMammoHangingProtocolObject', 'client');
+
+    api.export('ViewerWindows', 'client');
 
     // Viewer management objects
     api.export('toolManager', 'client');
     api.export('WindowManager', 'client');
-
 
     // UI Helpers
     api.addFiles('lib/helpers/formatDA.js', 'client');

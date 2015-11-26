@@ -1,169 +1,4 @@
-/**
- * This is a temporary function which will return a hardcoded hanging protocol as a JavaScript object
- */
-function getMammoHangingProtocolObject() {
-
-    var protocol = [{
-            stage: 1,
-            rows: 2,
-            columns: 4,
-            viewports: [{
-                    seriesDescription: 'RCC',
-                    study: 'prior'
-                }, {
-                    seriesDescription: 'LCC',
-                    study: 'prior'
-                }, {
-                    seriesDescription: 'RMLO',
-                    study: 'prior'
-                }, {
-                    seriesDescription: 'LMLO',
-                    study: 'prior'
-                }, {
-                    seriesDescription: 'RCC',
-                    study: 'current'
-                }, {
-                    seriesDescription: 'LCC',
-                    study: 'current'
-                }, {
-                    seriesDescription: 'RMLO',
-                    study: 'current'
-                }, {
-                    seriesDescription: 'LMLO',
-                    study: 'current'
-                }
-            ]
-        }, {
-            stage: 2,
-            rows: 1,
-            columns: 2,
-            viewports: [{
-                    seriesDescription: 'RCC',
-                    study: 'current'
-                }, {
-                    seriesDescription: 'LCC',
-                    study: 'current'
-                }
-            ]
-        }, {
-            stage: 3,
-            rows: 1,
-            columns: 2,
-            viewports: [{
-                    seriesDescription: 'RMLO',
-                    study: 'current'
-                }, {
-                    seriesDescription: 'LMLO',
-                    study: 'current'
-                }
-            ]
-        }, {
-            stage: 4,
-            rows: 1,
-            columns: 2,
-            viewports: [{
-                    seriesDescription: 'RCC',
-                    study: 'current'
-                }, {
-                    seriesDescription: 'RCC',
-                    study: 'prior'
-                }
-            ]
-        }, {
-            stage: 5,
-            rows: 1,
-            columns: 2,
-            viewports: [{
-                    seriesDescription: 'LCC',
-                    study: 'current'
-                }, {
-                    seriesDescription: 'LCC',
-                    study: 'prior'
-                }
-            ]
-        }, {
-            stage: 6,
-            rows: 1,
-            columns: 2,
-            viewports: [{
-                    seriesDescription: 'LMLO',
-                    study: 'current'
-                }, {
-                    seriesDescription: 'LMLO',
-                    study: 'prior'
-                }
-            ]
-        }, {
-            stage: 7,
-            rows: 1,
-            columns: 2,
-            viewports: [{
-                    seriesDescription: 'RMLO',
-                    study: 'current'
-                }, {
-                    seriesDescription: 'RMLO',
-                    study: 'prior'
-                }
-            ]
-        }, {
-            stage: 8,
-            rows: 2,
-            columns: 4,
-            viewports: [{
-                    seriesDescription: 'RCC',
-                    study: 'prior',
-                    options: {
-                        includeCADMarkers: true
-                    }
-                }, {
-                    seriesDescription: 'LCC',
-                    study: 'prior',
-                    options: {
-                        includeCADMarkers: true
-                    }
-                }, {
-                    seriesDescription: 'RMLO',
-                    study: 'prior',
-                    options: {
-                        includeCADMarkers: true
-                    }
-                }, {
-                    seriesDescription: 'LMLO',
-                    study: 'prior',
-                    options: {
-                        includeCADMarkers: true
-                    }
-                }, {
-                    seriesDescription: 'RCC',
-                    study: 'current',
-                    options: {
-                        includeCADMarkers: true
-                    }
-                }, {
-                    seriesDescription: 'LCC',
-                    study: 'current',
-                    options: {
-                        includeCADMarkers: true
-                    }
-                }, {
-                    seriesDescription: 'RMLO',
-                    study: 'current',
-                    options: {
-                        includeCADMarkers: true
-                    }
-                }, {
-                    seriesDescription: 'LMLO',
-                    study: 'current',
-                    options: {
-                        includeCADMarkers: true
-                    }
-                }
-            ]
-        }
-    ];
-
-    return protocol;
-}
+ViewerWindows = new Meteor.Collection(null);
 
 function findSeriesByDescription(seriesDescription, study) {
     var seriesInstanceUid;
@@ -180,335 +15,6 @@ function findSeriesByDescription(seriesDescription, study) {
     });
 
     return seriesInstanceUid;
-}
-
-/**
- * (Work in progress) Uses the information from a DICOM Hanging Protocol
- * to identify and display studies and series in the image viewer
- *
- * @param hangingProtocol
- * @param inputData
- * @returns {Array} Array of viewport data to be displayed
- */
-function applyHangingProtocol(hangingProtocol, inputData) {
-    var presentationGroup = inputData.DisplaySetPresentationGroup || 1;
-    var studies = ViewerStudies;
-    var currentProtocolData = hangingProtocol[presentationGroup - 1];
-
-    var viewportData = {
-        viewports: [],
-        viewportRows: currentProtocolData.rows,
-        viewportColumns: currentProtocolData.columns
-    };
-
-    var currentStudy = ViewerStudies.find({}, {$sort: {studyDate: 1}}).fetch()[0];
-    var otherStudies = WorklistStudies.find({
-        patientId: currentStudy.patientId,
-        studyInstanceUid: {
-            $ne: currentStudy.studyInstanceUid
-        }
-    }, {$sort: {
-        studyDate: 1
-    }}).fetch();
-    var priorStudy = otherStudies[0];
-
-    currentProtocolData.viewports.forEach(function(viewport, index) {
-        if (viewport.study === 'current') {
-            study = currentStudy;
-        } else if (viewport.study === 'prior') {
-            study = currentStudy;
-            /*ViewerStudies.find({
-                studyInstanceUid: {
-                    $ne: currentStudy.studyInstanceUid
-                }
-            }, {$sort: {studyDate: 1}}).fetch()[0];*/
-        }
-        
-        seriesInstanceUid = findSeriesByDescription(viewport.seriesDescription, study);
-
-        viewportData.viewports[index] = {
-            seriesInstanceUid: seriesInstanceUid,
-            studyInstanceUid: study.studyInstanceUid,
-            currentImageIdIndex: 0,
-            options: viewport.options
-        };
-    });
-
-    return viewportData;
-}
-
-
-/**
- * This is a temporary function which will return a hardcoded hanging protocol as a JavaScript object
- * The purpose of this is to act as a stub until we are actually parsing DICOM Hanging Protocol files,
- * since Orthanc doesn't seem to support them yet.
- *
- * Soon we will be using instanceDataToJsObject to produce this object from the HangingProtocol WADO
- * instance
- *
- */
-function getMammoHangingProtocol() {
-    var tagValues = {
-        HangingProtocolStorage: '1.2.840.10008.5.1.4.38.1'
-    };
-
-    var protocol = {
-        sopClassUid: tagValues.HangingProtocolStorage,
-        sopInstanceUid: '1.2.840.113986.2.664566.21121125.85669.911', // A random Uid
-        hangingProtocolName: 'MammoCadProtocol',
-        hangingProtocolDescription: 'Mammography screening protocol',
-        hangingProtocolLevel: 'SITE',
-        hangingProtocolCreator: 'Erik',
-        hangingProtocolCreationDateTime: '20020101104200',
-        hangingProtocolDefinitionSequence: [{
-                modality: 'MG',
-                laterality: '',
-                procedureCodeSequence: {
-                    codeValue: 98765,
-                    codingSchemeDesignator: '99Local',
-                    codingSchemeVersion: 1.5,
-                    codeMeaning: 'Mammogram'
-                },
-                anatomicRegionSequence: {
-                     codeValue: 'T-D1100',
-                     codingSchemeDesignator: 'SNM3',
-                     codeMeaning: 'BREAST'
-                },
-                reasonForRequestedProcedureCodeSequence: {
-                    codeValue: 'I67.1',
-                    codingSchemeDesignator: 'I10',
-                    codeMeaning: 'Calcification'
-                }
-        }],
-        hangingProtocolUserIdentificationCodeSequence: [],
-        hangingProtocolUserGroupName: 'ABC Hospital',
-        numberOfPriorsReferenced: 1,
-        imageSetsSequence: [{
-            imageSetSelectorSequence: [{
-                ImageSetSelectorUsageFlag: 'NO_MATCH',
-                SelectorAttribute: '00180015',
-                SelectorValueNumber: '1',
-                SelectorAttributeVR: 'CS',
-                SelectorCSValue: 'BREAST'
-            }],
-            timeBasedImageSetsSequence: [{
-                ImageSetNumber: 1,
-                ImageSetSelectorCategory: 'RELATIVE_TIME',
-                RelativeTime: '0\0',
-                RelativeTimeUnits: 'MINUTES',
-                ImageSetLabel: 'Current MG Breast'
-            },
-            {
-                ImageSetNumber: 2,
-                ImageSetSelectorCategory: 'ABSTRACT_PRIOR',
-                AbstractPriorValue: '1\\1',
-                ImageSetLabel: 'Prior MG Breast'
-            }]
-        }],
-        // Skip Number of Screens for now,
-        // Skip Nominal Screen Definition Sequence for now,
-
-        // http://dicom.nema.org/medical/dicom/current/output/chtml/part03/sect_C.23.3.html
-        DisplaySetsSequence: [
-        {
-            // Left side image (R MLO Current)
-            ImageSetNumber: 1,
-            DisplaySetNumber: 1,
-            DisplaySetPresentationGroup: 1,
-            DisplaySetPresentationGroupDescription: 'Current Mediolateral only',
-            ImageBoxesSequence: [{
-                DisplayEnvironmentSpatialPosition: '0\0.2\0.16667\0',
-                ImageBoxNumber: 1,
-                ImageBoxLayoutType: 'STACK'
-            }],
-            FilterOperationsSequence: [{
-                SelectorAttributeVR: 'CS',
-                SelectorCSValue: 'R CC',
-                FilterByCategory: 'SERIES_DESCRIPTION',
-                FilterByOperator: 'MEMBER_OF'
-            }]
-        }, {
-            // Right side image (L MLO Current)
-            ImageSetNumber: 1,
-            DisplaySetNumber: 1,
-            DisplaySetPresentationGroup: 1,
-            ImageBoxesSequence: [{
-                ImageBoxNumber: 1,
-                ImageBoxLayoutType: 'STACK'
-            }],
-            FilterOperationsSequence: [{
-                SelectorAttributeVR: 'CS',
-                SelectorCSValue: 'L CC',
-                FilterByCategory: 'SERIES_DESCRIPTION',
-                FilterByOperator: 'MEMBER_OF'
-            }]
-        },
-            {
-            // Left side image (R MLO Current)
-            ImageSetNumber: 1,
-            DisplaySetNumber: 1,
-            DisplaySetPresentationGroup: 2,
-            DisplaySetPresentationGroupDescription: 'Current Mediolateral only',
-            ImageBoxesSequence: [{
-                DisplayEnvironmentSpatialPosition: '0\0.2\0.16667\0',
-                ImageBoxNumber: 1,
-                ImageBoxLayoutType: 'STACK'
-            }],
-            FilterOperationsSequence: [{
-                SelectorAttributeVR: 'CS',
-                SelectorCSValue: 'R MLO',
-                FilterByCategory: 'SERIES_DESCRIPTION',
-                FilterByOperator: 'MEMBER_OF'
-            }],
-            ReformattingOperationType: '',
-            ReformattingThickness: '',
-            ReformattingInterval: '',
-            ReformattingOperationInitialViewDirection: '',
-            SortingOperationsSequence: [],
-            DisplaySetPatientOrientation: '',
-            VOIType: ''
-        }, {
-            // Right side image (L MLO Current)
-            ImageSetNumber: 1,
-            DisplaySetNumber: 1,
-            DisplaySetPresentationGroup: 2,
-            ImageBoxesSequence: [{
-                ImageBoxNumber: 1,
-                ImageBoxLayoutType: 'STACK'
-            }],
-            FilterOperationsSequence: [{
-                SelectorAttributeVR: 'CS',
-                SelectorCSValue: 'L MLO',
-                FilterByCategory: 'SERIES_DESCRIPTION',
-                FilterByOperator: 'MEMBER_OF'
-            }]
-        }, {
-            // Testing purposes
-            // Left side image (R MLO Current)
-            ImageSetNumber: 1,
-            DisplaySetNumber: 1,
-            DisplaySetPresentationGroup: 3,
-            DisplaySetPresentationGroupDescription: 'Current Mediolateral only',
-            ImageBoxesSequence: [{
-                DisplayEnvironmentSpatialPosition: '0\0.2\0.16667\0',
-                ImageBoxNumber: 1,
-                ImageBoxLayoutType: 'STACK'
-            }],
-            FilterOperationsSequence: [{
-                SelectorAttributeVR: 'CS',
-                SelectorCSValue: 'R MLO',
-                FilterByCategory: 'SERIES_DESCRIPTION',
-                FilterByOperator: 'MEMBER_OF'
-            }]
-        }, {
-            // Right side image (R CC Current)
-            ImageSetNumber: 1,
-            DisplaySetNumber: 1,
-            DisplaySetPresentationGroup: 3,
-            ImageBoxesSequence: [{
-                ImageBoxNumber: 1,
-                ImageBoxLayoutType: 'STACK'
-            }],
-            FilterOperationsSequence: [{
-                SelectorAttributeVR: 'CS',
-                SelectorCSValue: 'R CC',
-                FilterByCategory: 'SERIES_DESCRIPTION',
-                FilterByOperator: 'MEMBER_OF'
-            }]
-        }],
-        PartialDataDisplayHandling: 'MAINTAIN_LAYOUT',
-        SynchronizedScrollingSequence: [],
-        NavigationIndicatorSequence: []
-    };
-
-    return protocol;
-}
-
-function findSetsByPresentationGroup(DisplaySetsSequence, DisplaySetPresentationGroup) {
-    var presentationGroupSets = [];
-    DisplaySetsSequence.forEach(function(displaySet) {
-        if (displaySet.DisplaySetPresentationGroup === DisplaySetPresentationGroup) {
-            presentationGroupSets.push(displaySet);
-        }
-    });
-    return presentationGroupSets;
-}
-
-function findStudy(displaySet, studies) {
-    // Placeholder for now
-    return studies.find().fetch()[0].studyInstanceUid;
-}
-
-/**
- * Uses the FilterOperationsSequence information to find
- * the relevant series for display in this display set
- *
- * @param displaySet
- * @param study
- * @returns {String} The instance Uid of the series to be displayed
- */
-function findSeries(displaySet, study) {
-    var categoryDictionary = {
-        SERIES_DESCRIPTION: 'seriesDescription'
-    };
-
-    // TODO=Put these inside a loop? We need to support multiple filter operations,
-    // not just one
-    var filterBy = displaySet.FilterOperationsSequence[0].FilterByCategory;
-    var selectorValue = displaySet.FilterOperationsSequence[0].SelectorCSValue;
-    var filterType = displaySet.FilterOperationsSequence[0].FilterByOperator;
-    var category = categoryDictionary[filterBy];
-
-    var seriesInstanceUid;
-    study.seriesList.forEach(function(series) {
-        // TODO = Add other FilterBy operators
-        if (filterType === 'MEMBER_OF') {
-            if (series[category] === selectorValue) {
-                seriesInstanceUid = series.seriesInstanceUid;
-                return false;
-            }
-        }
-    });
-
-    return seriesInstanceUid;
-}
-
-/**
- * (Work in progress) Uses the information from a DICOM Hanging Protocol
- * to identify and display studies and series in the image viewer
- *
- * @param hangingProtocol
- * @param inputData
- * @returns {Array} Array of viewport data to be displayed
- */
-function applyDICOMHangingProtocol(hangingProtocol, inputData) {
-    log.info('applyDICOMHangingProtocol');
-    var presentationGroup = inputData.DisplaySetPresentationGroup || 1;
-    var studies = ViewerStudies;
-    var currentDisplaySets = findSetsByPresentationGroup(hangingProtocol.DisplaySetsSequence, presentationGroup);
-
-    var viewportData = {
-        viewports: []
-    };
-
-    currentDisplaySets.forEach(function(displaySet, index) {
-        // TODO= Find study information by image set properties and
-        // image set number of this display set
-        var ImageSetNumber = displaySet.ImageSetNumber;
-
-        studyInstanceUid = findStudy(displaySet, studies);
-
-        var study = ViewerStudies.findOne({studyInstanceUid: studyInstanceUid});
-        seriesInstanceUid = findSeries(displaySet, study);
-
-        viewportData.viewports[index] = {
-            seriesInstanceUid: seriesInstanceUid,
-            studyInstanceUid: studyInstanceUid,
-            currentImageIdIndex: 0
-        };
-    });
-
-    return viewportData;
 }
 
 /**
@@ -569,38 +75,24 @@ function defaultHangingProtocol(inputData) {
 var hangingProtocol;
 var presentationGroup = 1;
 
-function getHangingProtocol(inputData) {
-    // TODO = Update this to use Collection logic
-    var studies = ViewerStudies.find().fetch();
-
-    if (!studies.length) {
-        log.warn("No studies provided to Hanging Protocol");
+function getHangingProtocol() {
+    var study = ViewerStudies.findOne();
+    if (!study) {
         return;
     }
 
     // Find the unique modalities in this study
     var modalities = [];
-    studies.forEach(function(study) {
-        study.seriesList.forEach(function(series) {
-            if (modalities.indexOf(series.modality) < 0) {
-                modalities.push(series.modality);
-            }
-        });
+    study.seriesList.forEach(function(series) {
+        if (modalities.indexOf(series.modality) < 0) {
+            modalities.push(series.modality);
+        }
     });
 
     if (modalities.indexOf('MG') > -1) {
-        var hp = getMammoHangingProtocolObject();
-        Session.set('WindowManagerPresentationGroup', presentationGroup);
-        var testData = applyHangingProtocol(hp, inputData);
-        return testData;
-        // Commenting this out for now so we can hardcode a MG protocol
-        /*var hangingProtocol = getMammoHangingProtocol();
-        Session.set('WindowManagerPresentationGroup', presentationGroup);
-        return applyDICOMHangingProtocol(hangingProtocol, inputData);*/
+        hangingProtocol = getMammoHangingProtocolObject();
+        return hangingProtocol;
     }
-
-    Session.set('WindowManagerPresentationGroup', undefined);
-    return defaultHangingProtocol(inputData);
 }
 
 function setHangingProtocol(protocol) {
@@ -614,6 +106,8 @@ function previousPresentationGroup() {
     log.info('previousPresentationGroup: ' + presentationGroup);
     Session.set('WindowManagerPresentationGroup', presentationGroup);
     Session.set('UseHangingProtocol', Random.id());
+
+    updateWindows();
 }
 
 function nextPresentationGroup() {
@@ -625,13 +119,15 @@ function nextPresentationGroup() {
     log.info('nextPresentationGroup: ' + presentationGroup);
     Session.set('WindowManagerPresentationGroup', presentationGroup);
     Session.set('UseHangingProtocol', Random.id());
+
+    updateWindows();
 }
 
 function getNumPresentationGroups() {
-    // TODO=Pull this information from the largest
-    // value of DisplaySetPresentationGroup in the DisplaySetsSequence
-    // after the DICOM-HP is parsed
-    return 8;
+    if (!hangingProtocol || !hangingProtocol.stages) {
+        return;
+    }
+    return hangingProtocol.stages.length;
 }
 
 function getCurrentPresentationGroup() {
@@ -639,11 +135,252 @@ function getCurrentPresentationGroup() {
 }
 
 function setCurrentPresentationGroup(groupNumber) {
-    // Unused for now
     presentationGroup = groupNumber;
 }
 
+function updateWindows(data) {
+    ViewerWindows.remove({});
+
+    // First, retrieve any saved viewport data from this tab
+    var contentId = Session.get('activeContentId');
+    var savedData = ViewerData[contentId];
+
+    // Next, check if we are using a hanging protocol
+    var usingHP = savedData.usingHP || Session.get('UseHangingProtocol');
+
+    // Check if there is an applicable protocol
+    var applicableProtocol = getHangingProtocol();
+
+    // If we are using a hanging protocol, and no inputs have been given to this
+    // function, we should apply the HP now
+    if (applicableProtocol && !data && usingHP !== false) {
+        var hpAppliedSuccessfully = WindowManager.useHangingProtocol(applicableProtocol);
+        if (hpAppliedSuccessfully !== false) {
+            return;
+        }
+    }
+
+    var viewportRows,
+        viewportColumns;
+
+    if (data) {
+        // If data has been specified, we should use this data and tell the viewer that the
+        // use of any protocols has been interrupted.
+        viewportRows = data.viewportRows || 1;
+        viewportColumns = data.viewportColumns || 1;
+    } else {
+        // If no data has been specified, and we are not currently using any protocols,
+        // we should check if we need to apply a HP. If we don't, we should just fill
+        // viewports in order of series for the current study
+
+        // Check if we have any saved viewport layout data
+        // If we do, recover it now
+        viewportRows = savedData.viewportRows || 1;
+        viewportColumns = savedData.viewportColumns || 1;
+    }
+
+    var viewportData;
+    if (!$.isEmptyObject(savedData.loadedSeriesData)) {
+        viewportData = {
+            viewports: savedData.loadedSeriesData
+        };
+    }
+
+    var stacksByViewport = defaultHangingProtocol({
+        viewportRows: viewportRows,
+        viewportColumns: viewportColumns
+    });
+
+
+    // Update viewerData
+    ViewerData[contentId].usingHP = false;
+    ViewerData[contentId].viewportRows = viewportRows;
+    ViewerData[contentId].viewportColumns = viewportColumns;
+    Session.set("ViewerData", ViewerData);
+
+    var numViewports = viewportRows * viewportColumns;
+    for (var i=0; i < numViewports; ++i) {
+        if (viewportData && !$.isEmptyObject(viewportData.viewports[i])) {
+            dataToUse = viewportData.viewports[i];
+        } else if (stacksByViewport && !$.isEmptyObject(stacksByViewport.viewports[i])) {
+            dataToUse = stacksByViewport.viewports[i];
+        }
+
+        var window = {
+            viewportIndex: i,
+            // These two are necessary because otherwise the width and height helpers
+            // don't get the right data context. Seems to be related to the "each" loop.
+            viewportColumns: viewportColumns,
+            viewportRows: viewportRows,
+            seriesInstanceUid: dataToUse.seriesInstanceUid,
+            studyInstanceUid: dataToUse.studyInstanceUid,
+            currentImageIdIndex: dataToUse.currentImageIdIndex,
+            viewport: dataToUse.viewport
+        };
+
+        ViewerWindows.insert(window);
+    }
+
+    // Here we will find out if we need to load any other studies into the viewer
+    loadMissingStudies(ViewerWindows.find());
+}
+
+function loadMissingStudies(data) {
+    // We will make a list of unique studyInstanceUids
+    var uniqueStudyInstanceUids = [];
+
+    var deferredList = [];
+    var loadingDeferred = $.Deferred();
+
+    data.forEach(function(inputData) {
+        var deferred = $.Deferred();
+
+        var studyInstanceUid = inputData.studyInstanceUid;
+        if (!studyInstanceUid) {
+            return;
+        }
+
+        // If this studyInstanceUid is already in the list, stop here
+        if (uniqueStudyInstanceUids.indexOf(studyInstanceUid) > -1) {
+            return;
+        }
+
+        // Otherwise, add it to the list
+        uniqueStudyInstanceUids.push(studyInstanceUid);
+
+        // Check that we already have this study in ViewerStudies
+        var loadedStudy = ViewerStudies.findOne({studyInstanceUid: studyInstanceUid});
+        if (loadedStudy) {
+            return;
+        }
+
+        deferredList.push(deferred);
+
+        // If any of the associated studies is not already loaded, load it now
+        Meteor.call('GetStudyMetadata', studyInstanceUid, function(error, study) {
+            if (error) {
+                deferred.reject();
+            }
+            // Sort the study's series and instances by series and instance number
+            sortStudy(study);
+
+            // Insert it into the ViewerStudies Collection
+            ViewerStudies.insert(study);
+            deferred.resolve();
+        });
+    });
+
+    // When all necessary studies are loaded, resolve the primary deferred
+    $.when.apply($, deferredList).done(function() {
+        loadingDeferred.resolve();
+    });
+
+    return loadingDeferred.promise();
+}
+
+function loadSeriesInViewport(seriesData, element) {
+    rerenderViewportWithNewSeries(element, seriesData);
+    Session.set('UseHangingProtocol', false);
+}
+
+function initialize() {
+    updateWindows();
+}
+
+function setLayout (data) {
+    WindowManager.updateWindows(data);
+}
+
+function useHangingProtocol(applicableProtocol) {
+    log.info('Using hanging protocol');
+
+    Session.set('WindowManagerPresentationGroup', presentationGroup);
+    Session.set('UseHangingProtocol', Random.id());
+
+    var contentId = Session.get('activeContentId');
+    ViewerData[contentId].usingHP = true;
+    Session.set("ViewerData", ViewerData);
+
+    var currentStudy = ViewerStudies.findOne();
+
+    var otherStudies = WorklistStudies.find({
+        patientId: currentStudy.patientId,
+        studyInstanceUid: {
+            $ne: currentStudy.studyInstanceUid
+        }
+    }, {$sort: {
+        studyDate: 1
+    }}).fetch();
+
+    if (!otherStudies.length) {
+        return false;
+    }
+
+    var missingStudies = [];
+    var studyInstanceUid;
+    applicableProtocol.studiesNeeded.forEach(function(study) {
+        if (study === 'current') {
+            studyInstanceUid = currentStudy.studyInstanceUid;
+        } else if (study === 'prior') {
+            studyInstanceUid = otherStudies[0].studyInstanceUid;
+        }
+
+        if (!ViewerStudies.findOne({studyInstanceUid: studyInstanceUid})) {
+            missingStudies.push({
+                studyInstanceUid: studyInstanceUid
+            });
+        }
+    });
+
+    var studiesReady = loadMissingStudies(missingStudies);
+
+    studiesReady.then(function() {
+        var currentProtocolData = applicableProtocol.stages[presentationGroup - 1];
+
+        var viewportRows = currentProtocolData.rows;
+        var viewportColumns = currentProtocolData.columns;
+
+        var study;
+        currentProtocolData.viewports.forEach(function(viewport, viewportIndex) {
+            if (viewport.study === 'current') {
+                study = currentStudy;
+            } else if (viewport.study === 'prior') {
+                study = ViewerStudies.findOne({
+                    studyInstanceUid: {
+                        $ne: currentStudy.studyInstanceUid
+                    }
+                }, {$sort: {studyDate: 1}});
+            }
+
+            var seriesInstanceUid = findSeriesByDescription(viewport.seriesDescription, study);
+
+            var window = {
+                viewportIndex: viewportIndex,
+                viewportRows: viewportRows,
+                viewportColumns: viewportColumns,
+                seriesInstanceUid: seriesInstanceUid,
+                studyInstanceUid: study.studyInstanceUid,
+                currentImageIdIndex: 0,
+                options: viewport.options
+            };
+
+            ViewerWindows.insert(window);
+        });
+
+        // Update viewerData
+        ViewerData[contentId].usingHP = true;
+        ViewerData[contentId].viewportRows = viewportRows;
+        ViewerData[contentId].viewportColumns = viewportColumns;
+        Session.set("ViewerData", ViewerData);
+    });
+}
+
 WindowManager = {
+    init: initialize,
+    setLayout: setLayout,
+    updateWindows: updateWindows,
+    useHangingProtocol: useHangingProtocol,
+    loadSeriesInViewport: loadSeriesInViewport,
     setHangingProtocol: setHangingProtocol,
     getHangingProtocol: getHangingProtocol,
     getNumPresentationGroups: getNumPresentationGroups,
@@ -652,5 +389,3 @@ WindowManager = {
     nextPresentationGroup: nextPresentationGroup,
     previousPresentationGroup: previousPresentationGroup
 };
-
-WindowManager.setHangingProtocol(defaultHangingProtocol);

@@ -9,3 +9,12 @@ Template.hangingProtocolButtons.helpers({
         return presentationGroup > 1;
     }
 });
+
+Template.hangingProtocolButtons.events({
+    'click #previousPresentationGroup': function() {
+        WindowManager.previousPresentationGroup();
+    },
+    'click #nextPresentationGroup': function() {
+        WindowManager.nextPresentationGroup();
+    }
+});

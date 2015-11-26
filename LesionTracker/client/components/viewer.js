@@ -16,7 +16,18 @@ function resizeViewports() {
     }, 1);
 }
 
+var resizeTimer;
 Template.viewer.onCreated(function() {
+    // Avoid doing DOM manipulation during the resize handler
+    // because it is fired very often.
+    // Resizing is therefore performed 100 ms after the resize event stops.
+    $(window).on('resize', function() {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(function() {
+            resizeViewports();
+        }, 100);
+    });
+
     var self = this;
     log.info("viewer onCreated");
 
@@ -196,19 +207,7 @@ function addMeasurementAsToolData(data) {
     });
 }
 
-
 Template.viewer.onDestroyed(function() {
     log.info("onDestroyed");
     OHIF.viewer.updateImageSynchronizer.destroy();
-});
-
-// Avoid doing DOM manipulation during the resize handler
-// because it is fired very often.
-// Resizing is therefore performed 100 ms after the resize event stops.
-var resizeTimer;
-$(window).on('resize', function() {
-    clearTimeout(resizeTimer);
-    resizeTimer = setTimeout(function() {
-        resizeViewports();
-    }, 100);
 });
