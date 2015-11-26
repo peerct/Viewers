@@ -112,6 +112,7 @@ Package.onUse(function (api) {
     api.addFiles('lib/rerenderViewportWithNewSeries.js', 'client');
     api.addFiles('lib/sortStudy.js', 'client');
     api.addFiles('lib/toolManager.js', 'client');
+    api.addFiles('lib/hangingprotocols.js', 'client');
     api.addFiles('lib/windowManager.js', 'client');
     api.addFiles('lib/enablePrefetchOnElement.js', 'client');
     api.addFiles('lib/displayReferenceLines.js', 'client');
@@ -123,6 +124,7 @@ Package.onUse(function (api) {
     api.addFiles('lib/WLPresets.js', 'client');
     api.addFiles('lib/resizeViewportElements.js', 'client');
     api.addFiles('lib/encodeQueryData.js', 'server');
+    api.addFiles('lib/modalityDefaultViewport.js', 'client');
 
     //api.export('accountsConfig', 'client');
     api.export('resizeViewportElements','client');
@@ -131,6 +133,7 @@ Package.onUse(function (api) {
     api.export('enablePrefetchOnElement', 'client');
     api.export('displayReferenceLines', 'client');
     api.export('setActiveViewport', 'client');
+    api.export('addMetaData', 'client');
     api.export('createStacks', 'client');
     api.export('getImageId', 'client');
     api.export('getWADORSImageId', 'client');
@@ -140,6 +143,11 @@ Package.onUse(function (api) {
     api.export('sortStudy', 'client');
     api.export('updateOrientationMarkers', 'client');
     api.export('encodeQueryData', 'server');
+    api.export('getMammoHangingProtocolObject', 'client');
+    api.export('getModalityDefaultViewport', 'client');
+    api.export('setModalityDefaultViewportFunction', 'client');
+
+    api.export('ViewerWindows', 'client');
 
     // Viewer management objects
     api.export('toolManager', 'client');

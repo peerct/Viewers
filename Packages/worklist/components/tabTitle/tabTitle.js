@@ -31,7 +31,7 @@ Template.tabTitle.events({
             var newContentId = newActiveTabLink.data("target").replace("#", "");
 
             // Switch to this tab
-            switchToTab(newContentId);   
+            switchToTab(newContentId);
         }
 
         // Find the tab to be closed in the Tabs collection
@@ -42,7 +42,6 @@ Template.tabTitle.events({
 
         // Remove any stored data related to this tab from the global ViewerData structure
         delete ViewerData[contentId];
-
     }
 });
 

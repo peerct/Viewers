@@ -1,4 +1,6 @@
-ViewerWindows = new Meteor.Collection(null);
+Template.imageViewerViewports.onCreated(function() {
+   WindowManager.init();
+});
 
 Template.imageViewerViewports.helpers({
     height: function() {
@@ -10,108 +12,6 @@ Template.imageViewerViewports.helpers({
         return 100 / viewportColumns;
     },
     viewerWindow: function() {
-        ViewerWindows = new Meteor.Collection(null);
-
-        log.info("imageViewerViewports viewportArray");
-
-        var viewportRows = this.viewportRows || 1;
-        var viewportColumns = this.viewportColumns || 1;
-
-        var contentId = this.contentId || $("#viewer").parents(".tab-pane.active").attr('id');
-        if (this.viewportRows && this.viewportColumns) {
-            viewportRows = this.viewportRows || 1;
-            viewportColumns = this.viewportColumns || 1;
-        } else if (ViewerData[contentId].viewportRows && ViewerData[contentId].viewportColumns) {
-            viewportRows = ViewerData[contentId].viewportRows;
-            viewportColumns = ViewerData[contentId].viewportColumns;
-        }
-
-        var viewportData;
-        if (!$.isEmptyObject(ViewerData[contentId].loadedSeriesData)) {
-            viewportData = ViewerData[contentId].loadedSeriesData;
-        }
-
-        var inputData = {
-            viewportColumns: viewportColumns,
-            viewportRows: viewportRows
-        };
-
-        inputData.DisplaySetPresentationGroup = Session.get('WindowManagerPresentationGroup');
-        var hangingProtocolViewportData = WindowManager.getHangingProtocol(inputData);
-        if (Session.get('UseHangingProtocol')) {
-            viewportData = hangingProtocolViewportData.viewports;
-            viewportRows = hangingProtocolViewportData.viewportRows || viewportRows;
-            viewportColumns = hangingProtocolViewportData.viewportColumns || viewportColumns;
-        }
-
-        // Update viewerData
-        ViewerData[contentId].viewportRows = viewportRows;
-        ViewerData[contentId].viewportColumns = viewportColumns;
-        Session.set("ViewerData", ViewerData);
-
-        this.viewportRows = viewportRows;
-        this.viewportColumns = viewportColumns;
-
-        var numViewports = viewportRows * viewportColumns;
-        for (var i=0; i < numViewports; ++i) {
-            var data = {
-                viewportIndex: i,
-                // These two are necessary because otherwise the width and height helpers
-                // don't get the right data context. Seems to be related to the "each" loop.
-                viewportColumns: viewportColumns,
-                viewportRows: viewportRows
-            };
-
-            if (viewportData && !$.isEmptyObject(viewportData[i])) {
-                data.seriesInstanceUid = viewportData[i].seriesInstanceUid;
-                data.studyInstanceUid = viewportData[i].studyInstanceUid;
-                data.currentImageIdIndex = viewportData[i].currentImageIdIndex;
-                data.viewport = viewportData[i].viewport;
-            } else if (hangingProtocolViewportData && !$.isEmptyObject(hangingProtocolViewportData.viewports[i])) {
-                data.seriesInstanceUid = hangingProtocolViewportData.viewports[i].seriesInstanceUid;
-                data.studyInstanceUid = hangingProtocolViewportData.viewports[i].studyInstanceUid;
-                data.currentImageIdIndex = hangingProtocolViewportData.viewports[i].currentImageIdIndex;
-                data.viewport = hangingProtocolViewportData.viewports[i].viewport;
-            }
-
-            ViewerWindows.insert(data);
-        }
-
-
-        // Here we will find out if we need to load any other studies into the viewer
-
-        // We will make a list of unique studyInstanceUids
-        var uniqueStudyInstanceUids = [];
-
-        // Meteor doesn't support Mongo's 'distinct' function, so we have to do this in a loop
-        ViewerWindows.find().forEach(function(window) {
-            var studyInstanceUid = window.studyInstanceUid;
-            if (!studyInstanceUid) {
-                return;
-            }
-
-            // If this studyInstanceUid is already in the list, stop here
-            if (uniqueStudyInstanceUids.indexOf(studyInstanceUid) > -1) {
-                return;
-            }
-
-            // Otherwise, add it to the list
-            uniqueStudyInstanceUids.push(studyInstanceUid);
-
-            // If any of the associated studies is not already loaded, load it now
-            var loadedStudy = ViewerStudies.findOne({studyInstanceUid: studyInstanceUid});
-            if (!loadedStudy) {
-                // Load the study
-                Meteor.call('GetStudyMetadata', studyInstanceUid, function(error, study) {
-                    // Sort the study's series and instances by series and instance number
-                    sortStudy(study);
-
-                    // Insert it into the ViewerStudies Collection
-                    ViewerStudies.insert(study);
-                });
-            }
-        });
-
         return ViewerWindows.find();
     }
 });
@@ -124,7 +24,7 @@ Template.imageViewerViewports.events({
     'CornerstoneMouseDoubleClick .imageViewerViewport': function(e) {
         var container = $(".viewerMain").get(0);
         var data;
-        var contentId = this.contentId || $("#viewer").parents(".tab-pane.active").attr('id');
+        var contentId = Session.get('activeContentId');
 
         // If there is more than one viewport on screen
         // And one of them is double-clicked, it should be rendered alone
@@ -144,8 +44,7 @@ Template.imageViewerViewports.events({
             };
 
             // Render the imageViewerViewports template with these settings
-            $('#imageViewerViewports').remove();
-            UI.renderWithData(Template.imageViewerViewports, data, container);
+            WindowManager.updateWindows(data);
 
             // Remove the 'zoomed' class from any viewports
             $('.imageViewerViewport').removeClass('zoomed');
@@ -176,8 +75,7 @@ Template.imageViewerViewports.events({
             };
 
             // Render the imageViewerViewports template with these settings
-            $('#imageViewerViewports').remove();
-            UI.renderWithData(Template.imageViewerViewports, data, container);
+            WindowManager.updateWindows(data);
 
             // Add the 'zoomed' class to the lone remaining viewport
             $('.imageViewerViewport').eq(0).addClass('zoomed');
