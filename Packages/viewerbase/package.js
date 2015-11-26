@@ -110,6 +110,7 @@ Package.onUse(function (api) {
     api.addFiles('lib/windowManager.js', 'client');
 
     //api.export('accountsConfig', 'client');
+    api.export('addMetaData', 'client');
     api.export('createStacks', 'client');
     api.export('encodeQueryData', ['client', 'server']);
     api.export('getImageId', 'client');

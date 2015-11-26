@@ -22,9 +22,8 @@ var savedSeriesData,
 
 Template.imageViewerViewports.events({
     'dblclick .imageViewerViewport': function(e) {
-        var container = $(".viewerMain").get(0);
         var data;
-        var contentId = this.contentId || $("#viewer").parents(".tab-pane.active").attr('id');
+        var contentId = Session.get('activeContentId');
 
         // If there is more than one viewport on screen
         // And one of them is double-clicked, it should be rendered alone
@@ -44,8 +43,7 @@ Template.imageViewerViewports.events({
             };
 
             // Render the imageViewerViewports template with these settings
-            $('#imageViewerViewports').remove();
-            UI.renderWithData(Template.imageViewerViewports, data, container);
+            WindowManager.updateWindows(data);
 
             // Remove the 'zoomed' class from any viewports
             $('.imageViewerViewport').removeClass('zoomed');
@@ -76,8 +74,7 @@ Template.imageViewerViewports.events({
             };
 
             // Render the imageViewerViewports template with these settings
-            $('#imageViewerViewports').remove();
-            UI.renderWithData(Template.imageViewerViewports, data, container);
+            WindowManager.updateWindows(data);
 
             // Add the 'zoomed' class to the lone remaining viewport
             $('.imageViewerViewport').eq(0).addClass('zoomed');
