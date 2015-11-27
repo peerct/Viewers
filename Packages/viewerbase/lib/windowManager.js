@@ -199,6 +199,8 @@ function updateWindows(data) {
     Session.set("ViewerData", ViewerData);
 
     var numViewports = viewportRows * viewportColumns;
+
+    var data = [];
     for (var i=0; i < numViewports; ++i) {
         if (viewportData && !$.isEmptyObject(viewportData.viewports[i])) {
             dataToUse = viewportData.viewports[i];
@@ -218,11 +220,18 @@ function updateWindows(data) {
             viewport: dataToUse.viewport
         };
 
-        ViewerWindows.insert(window);
+        data.push(window);
     }
 
     // Here we will find out if we need to load any other studies into the viewer
-    loadMissingStudies(ViewerWindows.find({}, {reactive: false}));
+    var studiesReady = loadMissingStudies(data);
+    studiesReady.then(function() {
+        data.forEach(function(window) {
+            ViewerWindows.insert(window);
+        });
+    }, function(error) {
+        log.warn(error);
+    });
 }
 
 function loadMissingStudies(data) {
@@ -254,6 +263,7 @@ function loadMissingStudies(data) {
         }, {
             reactive: false
         });
+
         if (loadedStudy) {
             return;
         }
