@@ -11,10 +11,12 @@ Template.hangingProtocolButtons.helpers({
 });
 
 Template.hangingProtocolButtons.events({
-    'click #previousPresentationGroup': function() {
+    'click #previousPresentationGroup': function(e) {
+        $(e.currentTarget).tooltip('hide');
         WindowManager.previousPresentationGroup();
     },
-    'click #nextPresentationGroup': function() {
+    'click #nextPresentationGroup': function(e) {
+        $(e.currentTarget).tooltip('hide');
         WindowManager.nextPresentationGroup();
     }
 });
