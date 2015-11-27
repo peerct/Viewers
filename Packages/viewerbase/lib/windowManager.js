@@ -29,7 +29,7 @@ function findSeriesByDescription(seriesDescription, study) {
  * @returns {Array}
  */
 function defaultHangingProtocol(inputData) {
-    var studies = ViewerStudies.find().fetch();
+    var studies = ViewerStudies.find({}, {reactive: false}).fetch();
     var viewportRows = inputData.viewportRows;
     var viewportColumns = inputData.viewportColumns;
 
@@ -222,7 +222,7 @@ function updateWindows(data) {
     }
 
     // Here we will find out if we need to load any other studies into the viewer
-    loadMissingStudies(ViewerWindows.find());
+    loadMissingStudies(ViewerWindows.find({}, {reactive: false}));
 }
 
 function loadMissingStudies(data) {
@@ -249,7 +249,11 @@ function loadMissingStudies(data) {
         uniqueStudyInstanceUids.push(studyInstanceUid);
 
         // Check that we already have this study in ViewerStudies
-        var loadedStudy = ViewerStudies.findOne({studyInstanceUid: studyInstanceUid});
+        var loadedStudy = ViewerStudies.findOne({
+            studyInstanceUid: studyInstanceUid
+        }, {
+            reactive: false
+        });
         if (loadedStudy) {
             return;
         }
@@ -301,16 +305,19 @@ function useHangingProtocol(applicableProtocol) {
     ViewerData[contentId].usingHP = true;
     Session.set("ViewerData", ViewerData);
 
-    var currentStudy = ViewerStudies.findOne();
+    var currentStudy = ViewerStudies.findOne({}, {reactive: false});
 
     var otherStudies = WorklistStudies.find({
         patientId: currentStudy.patientId,
         studyInstanceUid: {
             $ne: currentStudy.studyInstanceUid
         }
-    }, {$sort: {
-        studyDate: 1
-    }}).fetch();
+    }, {
+        reactive: false,
+        $sort: {
+            studyDate: 1
+        }
+    }).fetch();
 
     if (!otherStudies.length) {
         return false;
@@ -325,7 +332,13 @@ function useHangingProtocol(applicableProtocol) {
             studyInstanceUid = otherStudies[0].studyInstanceUid;
         }
 
-        if (!ViewerStudies.findOne({studyInstanceUid: studyInstanceUid})) {
+        var studyExists = ViewerStudies.findOne({
+            studyInstanceUid: studyInstanceUid
+        }, {
+            reactive: false
+        });
+
+        if (!studyExists) {
             missingStudies.push({
                 studyInstanceUid: studyInstanceUid
             });
@@ -349,7 +362,10 @@ function useHangingProtocol(applicableProtocol) {
                     studyInstanceUid: {
                         $ne: currentStudy.studyInstanceUid
                     }
-                }, {$sort: {studyDate: 1}});
+                }, {
+                    reactive: false,
+                    $sort: {studyDate: 1}
+                });
             }
 
             var seriesInstanceUid = findSeriesByDescription(viewport.seriesDescription, study);
