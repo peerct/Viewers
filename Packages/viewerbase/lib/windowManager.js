@@ -180,7 +180,11 @@ function updateWindows(data) {
     }
 
     var viewportData;
-    if (!$.isEmptyObject(savedData.loadedSeriesData)) {
+    if (data && data.loadedSeriesData && !$.isEmptyObject(data.loadedSeriesData)) {
+        viewportData = {
+            viewports: data.loadedSeriesData
+        };
+    } else if (!$.isEmptyObject(savedData.loadedSeriesData)) {
         viewportData = {
             viewports: savedData.loadedSeriesData
         };
