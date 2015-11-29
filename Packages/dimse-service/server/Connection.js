@@ -23,7 +23,8 @@ Connection = function(socket, options) {
   EventEmitter.call(this);
   this.socket = socket;
   this.options = Object.assign({
-    hostAE : "", sourceAE : "OHIFDCM", maxPackageSize : 32768, idle : 60, reconnect : true
+    hostAE : "", sourceAE : "OHIFDCM", maxPackageSize : 32768, idle : 60, reconnect : true,
+    vr : {split : true}
   }, options);
 
   this.connected = false;
@@ -356,7 +357,7 @@ Connection.prototype.addService = function(service) {
 
 Connection.prototype.receivedMessage = function(pdv) {
   var syntax = this.getSyntax(pdv.contextId), 
-      msg = readMessage(pdv.messageStream, pdv.type, syntax);
+      msg = readMessage(pdv.messageStream, pdv.type, syntax, this.options.vr);
 
   if (msg.isCommand()) {
     this.lastCommand = msg;

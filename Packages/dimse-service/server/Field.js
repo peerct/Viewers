@@ -16,7 +16,7 @@ Field.prototype.isNumeric = function() {
 }
 
 StringField = function(str) {
-  Field.call(this, C.TYPE_ASCII, str);
+  Field.call(this, C.TYPE_ASCII, typeof str == 'string' ? str : "");
 }
 util.inherits(StringField, Field);
 

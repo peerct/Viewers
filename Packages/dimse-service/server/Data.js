@@ -214,7 +214,7 @@ DateValue.prototype.readBytes = function(stream, length) {
   var year = parseInt(datestr.substring(0,4)), 
       month = parseInt(datestr.substring(4,6)), 
       day = parseInt(datestr.substring(6,8));
-  return new Date(year, month, day);
+  return datestr;//new Date(year, month, day);
 }
 
 DateValue.prototype.getFields = function(date) {
@@ -246,7 +246,8 @@ DecimalString.prototype.readBytes = function(stream, length) {
 }
 
 DecimalString.prototype.getFields = function(value) {
-  return DecimalString.super_.prototype.getFields.call(this, [new StringField(value.toExponential())]);
+  var f = parseFloat(value);
+  return DecimalString.super_.prototype.getFields.call(this, [new StringField(isNaN(f) ? '' : f.toExponential())]);
 }
 
 DateTime = function() {
@@ -328,7 +329,7 @@ LongString.prototype.readBytes = function(stream, length) {
 }  
 
 LongString.prototype.getFields = function(value) {
-  return LongString.super_.prototype.getFields.call(this, [new StringField(value)]);
+  return LongString.super_.prototype.getFields.call(this, [new StringField(value ? value : "")]);
 }
 
 LongText = function() {
@@ -372,12 +373,12 @@ PersonName.prototype.getFields = function(value) {
   var str = null;
   if (typeof value == 'string') {
     str = value;
-  } else {
+  } else if (value) {
     var fName = value.family || "", gName = value.given || "", 
         middle = value.middle || "", prefix = value.prefix || "", suffix = value.suffix || "";
 
     str = [fName, gName, middle, prefix, suffix].join("^");      
-  }
+  } else str = '';
 
   return PersonName.super_.prototype.getFields.call(this, [new StringField(str)]);
 }
@@ -489,20 +490,23 @@ SequenceOfItems.prototype.readBytes = function(stream, sqlength, syntax) {
 
 SequenceOfItems.prototype.getFields = function(value, syntax) {
   var fields = [];
-  value.forEach(function(message) {
-    fields.push(new UInt16Field(0xfffe));
-    fields.push(new UInt16Field(0xe000));
-    fields.push(new UInt32Field(0xffffffff));
+  if (value) {
+    value.forEach(function(message) {
+      fields.push(new UInt16Field(0xfffe));
+      fields.push(new UInt16Field(0xe000));
+      fields.push(new UInt32Field(0xffffffff));
 
-    message.forEach(function(element) {
-      element.setSyntax(syntax);
-      fields = fields.concat(element.getFields());
-    });
+      message.forEach(function(element) {
+        element.setSyntax(syntax);
+        fields = fields.concat(element.getFields());
+      });
 
-    fields.push(new UInt16Field(0xfffe));
-    fields.push(new UInt16Field(0xe00d));
-    fields.push(new UInt32Field(0x00000000));
-  });
+      fields.push(new UInt16Field(0xfffe));
+      fields.push(new UInt16Field(0xe00d));
+      fields.push(new UInt32Field(0x00000000));
+    });    
+  }
+
   fields.push(new UInt16Field(0xfffe));
   fields.push(new UInt16Field(0xe0dd));
   fields.push(new UInt32Field(0x00000000));    
@@ -697,13 +701,14 @@ elementByType = function(type, value, syntax) {
   if (nk) {
     if (nk.vr == 'SQ') {
       var sq = [];
-      value.forEach(function(el) {
-        var values = [];
-        for (var tag in el) {
-          values.push(elementByType(tag, el[tag], syntax));
-        }
-        sq.push(values);
-      });
+      if (value)
+        value.forEach(function(el) {
+          var values = [];
+          for (var tag in el) {
+            values.push(elementByType(tag, el[tag], syntax));
+          }
+          sq.push(values);
+        });
       elem = new DataElement(type, nk.vr, nk.vm, sq, false, syntax);
     } else {
       elem = new DataElement(type, nk.vr, nk.vm, value, false, syntax);
@@ -781,14 +786,19 @@ readElements = function(stream, syntax) {
 var explicitVRList = ["OB", "OW", "OF", "SQ", "UC", "UR", "UT", "UN"], 
     binaryVRs = ["FL", "FD", "SL", "SS", "UL", "US"];
 
-DataElement = function(tag, vr, vm, value, vvr, syntax) {
+DataElement = function(tag, vr, vm, value, vvr, syntax, options) {
   this.vr = vr ? vrByType(vr) : null;
   this.tag = !vvr ? new Tag(tag) : tag;
   this.value = value;
   this.vm = vm;
   this.vvr = vvr ? true : false;
+  this.setOptions(options);
   this.setSyntax(syntax ? syntax : C.IMPLICIT_LITTLE_ENDIAN);
 };
+
+DataElement.prototype.setOptions = function(options) {
+  this.options = Object.assign({split : true}, options);
+}
 
 DataElement.prototype.setSyntax = function(syn) {
   this.syntax = syn;
@@ -798,7 +808,7 @@ DataElement.prototype.setSyntax = function(syn) {
 
 DataElement.prototype.getValue = function() {
   if (!this.singleValue() && !this.isBinaryNumber()) {
-    return this.value.split(String.fromCharCode(0x5c));
+    return this.options.split ? this.value.split(String.fromCharCode(0x5c)) : this.value;
   } else {
     return this.value;
   }

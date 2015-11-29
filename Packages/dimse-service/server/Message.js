@@ -216,11 +216,14 @@ DicomMessage.prototype.toObject = function() {
   return this.walkObject(this.elementPairs);
 }
 
-readMessage = function(stream, type, syntax) {
+readMessage = function(stream, type, syntax, options) {
   var elements = [], pairs = {}, useSyntax = type == C.DATA_TYPE_COMMAND ? C.IMPLICIT_LITTLE_ENDIAN : syntax;
   stream.reset();
   while (!stream.end()) {
     var elem = new DataElement();
+    if (options) {
+      elem.setOptions(options);
+    }
     elem.setSyntax(useSyntax);
     elem.readBytes(stream);//return;
     pairs[elem.tag.value] = elem;

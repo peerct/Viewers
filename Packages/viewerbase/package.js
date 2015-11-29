@@ -145,6 +145,9 @@ Package.onUse(function (api) {
     api.addFiles('server/services/qido/instances.js', 'server');
     api.addFiles('server/services/qido/studies.js', 'server');
     api.addFiles('server/services/wado/retrieveMetadata.js', 'server');
+    api.addFiles('server/services/dimse/studies.js', 'server');
+    api.addFiles('server/services/dimse/instances.js', 'server');
+    api.addFiles('server/services/dimse/retrieveMetadata.js', 'server');
     api.export('Services', 'server');
 });
 

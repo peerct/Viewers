@@ -12,7 +12,7 @@ DIMSE.associate = function(contexts, callback) {
     function() { //'connect' listener
       console.log('==Connected');
       
-      var conn = new Connection(client);
+      var conn = new Connection(client, {vr : {split : false}});
       conn.associate({contexts : contexts, hostAE : ae}, function(pdu) {
         // associated
         console.log('==Associated');
@@ -21,15 +21,18 @@ DIMSE.associate = function(contexts, callback) {
   });     
 };
 
-DIMSE.retrieveStudies = function() {
-  var start = new Date();
+DIMSE.retrieveStudies = function(params) {
+  //var start = new Date();
+  var future = new Future;
   DIMSE.associate([C.SOP_STUDY_ROOT_FIND], function(pdu){
-    this.setFindContext(C.SOP_STUDY_ROOT_FIND);
-    var result = this.findStudies({
+    var defaultParams = {
       0x0020000D : "", 0x00080060 : "",
       0x00080005 : "", 0x00080020 : "", 0x00080030 : "", 0x00080090 : "",
-      0x00100010 : "", 0x00100020 : "", 0x00200010 : ""
-    }), o = this;
+      0x00100010 : "", 0x00100020 : "", 0x00200010 : "", 0x00100030 : ""
+    };
+
+    this.setFindContext(C.SOP_STUDY_ROOT_FIND);
+    var result = this.findStudies(Object.assign(defaultParams, params)), o = this;
 
     var studies = [];
     result.on('result', function(msg){
@@ -41,26 +44,29 @@ DIMSE.retrieveStudies = function() {
     });
 
     this.on('close', function(){
-      var time = new Date() - start;console.log(time + 'ms taken');
-      console.log(studies[0].toString(), studies.length);
+      //var time = new Date() - start;console.log(time + 'ms taken');
+      future.return(studies);
     })
   });
+  return future.wait();
 };
 
-DIMSE.retrieveSeries = function(studyInstanceUID) {
-  var start = new Date();
+DIMSE.retrieveSeries = function(studyInstanceUID, params) {
+  var future = new Future;
   DIMSE.associate([C.SOP_STUDY_ROOT_FIND], function(pdu){
-    this.setFindContext(C.SOP_STUDY_ROOT_FIND);
-    var result = this.findSeries({
+    var defaultParams = {
       0x0020000D : studyInstanceUID ? studyInstanceUID : "",
       0x00080005 : "", 0x00080020 : "", 0x00080030 : "", 0x00080090 : "",
       0x00100010 : "", 0x00100020 : "", 0x00200010 : "", 0x0008103E : "",
       0x0020000E : "", 0x00200011 : ""
-    }), o = this;
+    };
 
-    var studies = [];
+    this.setFindContext(C.SOP_STUDY_ROOT_FIND);
+    var result = this.findSeries(Object.assign(defaultParams, params)), o = this;
+
+    var series = [];
     result.on('result', function(msg){
-      studies.push(msg);
+      series.push(msg);
     });
 
     result.on('end', function(){
@@ -68,24 +74,26 @@ DIMSE.retrieveSeries = function(studyInstanceUID) {
     });
 
     this.on('close', function(){
-      var time = new Date() - start;console.log(time + 'ms taken');
-      console.log(studies[0].toString());
+      future.return(series);
     })
   });
+  return future.wait();
 };
 
-DIMSE.retrieveInstances = function(studyInstanceUID, seriesInstanceUID) {
-  var start = new Date();
+DIMSE.retrieveInstances = function(studyInstanceUID, seriesInstanceUID, params) {
+  var future = new Future;
   DIMSE.associate([C.SOP_STUDY_ROOT_FIND], function(pdu){
-    this.setFindContext(C.SOP_STUDY_ROOT_FIND);
-    var result = this.findInstances({
+    var defaultParams = {
       0x0020000D : studyInstanceUID ? studyInstanceUID : "",
       0x0020000E : (studyInstanceUID && seriesInstanceUID) ? seriesInstanceUID : "",
       0x00080005 : "", 0x00080020 : "", 0x00080030 : "", 0x00080090 : "",
       0x00100010 : "", 0x00100020 : "", 0x00200010 : "", 0x0008103E : "",
       0x00200011 : "", 0x00080016 : "", 0x00080018 : "", 0x00200013 : "",
       0x00280010 : "", 0x00280011 : "", 0x00280100 : "", 0x00280103 : ""
-    }), o = this;
+    };
+
+    this.setFindContext(C.SOP_STUDY_ROOT_FIND);
+    var result = this.findInstances(Object.assign(defaultParams, params)), o = this;
 
     var instances = [];
     result.on('result', function(msg){
@@ -97,8 +105,8 @@ DIMSE.retrieveInstances = function(studyInstanceUID, seriesInstanceUID) {
     });
 
     this.on('close', function(){
-      var time = new Date() - start;console.log(time + 'ms taken');
-      console.log(instances[0].toString());
+      future.return(instances);
     })
   });
+  return future.wait();
 };

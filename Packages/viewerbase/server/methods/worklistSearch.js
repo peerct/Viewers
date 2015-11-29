@@ -8,6 +8,6 @@ Meteor.methods({
         // config.json files used to run the Meteor server
         var server = Meteor.settings.dicomWeb.endpoints[0];
 
-        return Services.QIDO.Studies(server, filter);
+        return Services.DIMSE.Studies(server, filter);
     }
 });
