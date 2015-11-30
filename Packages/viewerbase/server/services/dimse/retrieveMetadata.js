@@ -116,7 +116,7 @@ function resultDataToStudyMetadata(server, studyInstanceUid, resultData) {
         }
 
         series.instances.push(instanceSummary);
-    });console.log(studyData.seriesList[0].instances[0]);
+    });
 
     return studyData;
 }
