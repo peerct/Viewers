@@ -21,6 +21,35 @@ DIMSE.associate = function(contexts, callback) {
   });     
 };
 
+DIMSE.retrievePatients = function(params) {
+  //var start = new Date();
+  var future = new Future;
+  DIMSE.associate([C.SOP_PATIENT_ROOT_FIND], function(pdu){
+    var defaultParams = {
+      0x00100010 : "", 0x00100020 : "", 0x00100030 : "", 0x00100040 : "",
+      0x00101010 : "", 0x00101040 : ""
+    };
+
+    this.setFindContext(C.SOP_PATIENT_ROOT_FIND);
+    var result = this.findPatients(Object.assign(defaultParams, params)), o = this;
+
+    var patients = [];
+    result.on('result', function(msg){
+      patients.push(msg);
+    });
+
+    result.on('end', function(){
+      o.release();
+    });
+
+    this.on('close', function(){
+      //var time = new Date() - start;console.log(time + 'ms taken');
+      future.return(patients);
+    })
+  });
+  return future.wait();
+};
+
 DIMSE.retrieveStudies = function(params) {
   //var start = new Date();
   var future = new Future;

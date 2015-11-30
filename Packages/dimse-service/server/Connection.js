@@ -567,6 +567,15 @@ Connection.prototype.find = function(params, callback) {
   return this.sendMessage(this.findContext, new CFindRQ(), this.wrapMessage(params), callback);
 }
 
+Connection.prototype.findPatients = function(params, callback) {
+  var sendParams = Object.assign({
+    0x00080052 : C.QUERY_RETRIEVE_LEVEL_PATIENT,
+    0x00100010 : "", 0x00100020 : "", 0x00100030 : "", 0x00100040 : "",
+  }, params);
+
+  return this.find(sendParams, callback);    
+}
+
 Connection.prototype.findStudies = function(params, callback) {
   var sendParams = Object.assign({
     0x00080052 : C.QUERY_RETRIEVE_LEVEL_STUDY,
