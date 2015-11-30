@@ -349,6 +349,8 @@ function sameSeriesAsCurrent(study, currentStudy, modality) {
 function useHangingProtocol(applicableProtocol) {
     log.info('Using hanging protocol');
 
+    var currentPresentationGroup = presentationGroup;
+
     Session.set('WindowManagerNumPresentationGroups', getNumPresentationGroups());
     Session.set('WindowManagerPresentationGroup', presentationGroup);
     Session.set('UseHangingProtocol', Random.id());
@@ -398,6 +400,11 @@ function useHangingProtocol(applicableProtocol) {
     var studiesReady = loadMissingStudies(missingStudies);
 
     studiesReady.then(function() {
+        if (presentationGroup !== currentPresentationGroup) {
+            log.warn('Presentation group changes while studies were loading');
+            return;
+        }
+        
         var currentProtocolData = applicableProtocol.stages[presentationGroup - 1];
 
         var viewportRows = currentProtocolData.rows;
