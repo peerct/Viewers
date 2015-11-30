@@ -35,6 +35,7 @@ function defaultHangingProtocol(inputData) {
 
     // This is the most basic hanging protocol.
     var stacks = [];
+    var singleImageStacks = [];
     studies.forEach(function(study) {
         study.seriesList.forEach(function(series) {
             
@@ -49,9 +50,18 @@ function defaultHangingProtocol(inputData) {
                 series: series,
                 study: study
             };
-            stacks.push(stack);
+            
+            // Temporary fragile change to make non-single-image MRs show up first
+            var numFrames = anInstance.numFrames;
+            if (series.instances.length > 1 || numFrames > 1) {
+                stacks.push(stack);
+            } else {
+                singleImageStacks.push(stack);
+            }
         });
     });
+
+    stacks = stacks.concat(singleImageStacks);
 
     var viewportData = {
         viewports: []
