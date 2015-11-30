@@ -74,46 +74,6 @@ toolManager = {
     addTool: function(name, base) {
         tools[name] = base;
     },
-    setAlwaysEnabledTools: function(tools) {
-        alwaysEnabledTools = tools;
-    },
-    getAlwaysEnabledTools: function() {
-        return alwaysEnabledTools;
-    },
-    toggleAlwaysEnabledTool: function(tool) {
-        var whatToDo;
-
-        var index = alwaysEnabledTools.indexOf(tool);
-        if (index >= 0) {
-            // The tool is already enabled, disable it
-            whatToDo = 'disable';
-            alwaysEnabledTools.splice(index, 1);
-        } else {
-            // The tool is not enable yet, enable it
-            whatToDo =  'enable';
-            alwaysEnabledTools.push(tool);
-        }
-        
-        log.info(whatToDo + ' ' + tool);
-
-        $('.imageViewerViewport').not('.empty').each(function(index, element) {
-            var enabledElement;
-            try {
-                enabledElement = cornerstone.getEnabledElement(element);
-            } catch(error) {
-                log.warn(error);
-                return;
-            }
-
-            cornerstoneTools[tool][whatToDo](element);
-
-            if (!enabledElement.image) {
-                return;
-            }
-
-            //cornerstone.updateImage(element);
-        });
-    },
     setActiveToolForElement: function(tool, element) {
         var canvases = $(element).find('canvas');
         if (element.classList.contains('empty') || !canvases.length) {
@@ -205,5 +165,52 @@ toolManager = {
     },
     getDefaultTool: function() {
         return OHIF.viewer.defaultTool;
+    },
+    setAlwaysEnabledTools: function(tools) {
+        alwaysEnabledTools = tools;
+    },
+    getAlwaysEnabledTools: function() {
+        return alwaysEnabledTools;
+    },
+    toggleAlwaysEnabledTool: function(tool) {
+        var whatToDo;
+
+        var index = alwaysEnabledTools.indexOf(tool);
+
+        // If we are trying to toggle on/off the active tool, stop here
+        // Because the active tool disappearing is probably not what the user wants
+        if (tool === activeTool) {
+            return;
+        }
+
+        if (index >= 0) {
+            // The tool is already enabled, or it is the active tool, disable it
+            whatToDo = 'disable';
+            alwaysEnabledTools.splice(index, 1);
+        } else {
+            // The tool is not enabled yet, enable it
+            whatToDo =  'enable';
+            alwaysEnabledTools.push(tool);
+        }
+        
+        log.info(whatToDo + ' ' + tool);
+
+        $('.imageViewerViewport').not('.empty').each(function(index, element) {
+            var enabledElement;
+            try {
+                enabledElement = cornerstone.getEnabledElement(element);
+            } catch(error) {
+                log.warn(error);
+                return;
+            }
+
+            // Note that tools should be running updateImage inside their enable/disable functions,
+            // or nothing will change when this runs
+            cornerstoneTools[tool][whatToDo](element);
+
+            if (!enabledElement.image) {
+                return;
+            }
+        });
     }
 };

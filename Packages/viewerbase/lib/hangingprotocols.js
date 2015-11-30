@@ -8,6 +8,7 @@ getMammoHangingProtocolObject = function() {
             'current',
             'prior'
         ],
+        primaryModality: 'MG',
         stages: [{
             stage: 1,
             rows: 2,

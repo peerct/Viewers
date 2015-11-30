@@ -319,9 +319,37 @@ function setLayout (data) {
     WindowManager.updateWindows(data);
 }
 
+function sameSeriesAsCurrent(study, currentStudy, modality) {
+    if (!study.seriesList || !study.seriesList.length) {
+        return false;
+    }
+
+    var currentStudyUniqueSeriesDescriptions = [];
+    currentStudy.seriesList.forEach(function(series) {
+        if (currentStudyUniqueSeriesDescriptions.indexOf(series.seriesDescription) > -1 ||
+            series.modality !== modality) {
+            return;
+        }
+        currentStudyUniqueSeriesDescriptions.push(series.seriesDescription);
+    });
+
+    var uniqueSeriesDescriptions = [];
+    study.seriesList.forEach(function(series) {
+        if (uniqueSeriesDescriptions.indexOf(series.seriesDescription) > -1 ||
+            series.modality !== modality) {
+            return;
+        }
+        uniqueSeriesDescriptions.push(series.seriesDescription);
+    });
+
+    var sortFirst = true;
+    return arraysEqual(currentStudyUniqueSeriesDescriptions, uniqueSeriesDescriptions, sortFirst);
+}
+
 function useHangingProtocol(applicableProtocol) {
     log.info('Using hanging protocol');
 
+    Session.set('WindowManagerNumPresentationGroups', getNumPresentationGroups());
     Session.set('WindowManagerPresentationGroup', presentationGroup);
     Session.set('UseHangingProtocol', Random.id());
 
@@ -335,11 +363,14 @@ function useHangingProtocol(applicableProtocol) {
         patientId: currentStudy.patientId,
         studyInstanceUid: {
             $ne: currentStudy.studyInstanceUid
+        },
+        studyDate: {
+            $lt: currentStudy.studyDate
         }
     }, {
         reactive: false,
-        $sort: {
-            studyDate: 1
+        sort: {
+            studyDate: -1
         }
     }).fetch();
 
@@ -349,22 +380,17 @@ function useHangingProtocol(applicableProtocol) {
 
     var missingStudies = [];
     var studyInstanceUid;
-    applicableProtocol.studiesNeeded.forEach(function(study) {
-        if (study === 'current') {
-            studyInstanceUid = currentStudy.studyInstanceUid;
-        } else if (study === 'prior') {
-            studyInstanceUid = otherStudies[0].studyInstanceUid;
-        }
 
+    otherStudies.forEach(function(study) {
         var studyExists = ViewerStudies.findOne({
-            studyInstanceUid: studyInstanceUid
+            studyInstanceUid: study.studyInstanceUid
         }, {
             reactive: false
         });
 
         if (!studyExists) {
             missingStudies.push({
-                studyInstanceUid: studyInstanceUid
+                studyInstanceUid: study.studyInstanceUid
             });
         }
     });
@@ -378,33 +404,79 @@ function useHangingProtocol(applicableProtocol) {
         var viewportColumns = currentProtocolData.columns;
 
         var study;
+        var priorStudyInstanceUid;
         currentProtocolData.viewports.forEach(function(viewport, viewportIndex) {
             if (viewport.study === 'current') {
                 study = currentStudy;
             } else if (viewport.study === 'prior') {
-                study = ViewerStudies.findOne({
+                var previousLoadedStudies = ViewerStudies.find({
+                    patientId: currentStudy.patientId,
                     studyInstanceUid: {
                         $ne: currentStudy.studyInstanceUid
+                    },
+                    studyDate: {
+                        $lt: currentStudy.studyDate
                     }
                 }, {
                     reactive: false,
-                    $sort: {studyDate: 1}
+                    sort: {
+                        studyDate: -1
+                    }
+                }).fetch();
+
+                var previousMatchingStudies = [];
+                previousLoadedStudies.forEach(function(study) {
+                    if (!sameSeriesAsCurrent(study, currentStudy, applicableProtocol.primaryModality)) {
+                        return;
+                    }
+                    previousMatchingStudies.push(study);
+                });
+
+                if (!previousMatchingStudies || !previousMatchingStudies.length) {
+                    log.warn('No previous matching studies found for Prior!');
+                    previousMatchingStudies = [{
+                        studyInstanceUid: undefined
+                    }];
+                }
+
+                priorStudyInstanceUid = previousMatchingStudies[0].studyInstanceUid;
+                study = ViewerStudies.findOne({
+                    studyInstanceUid: priorStudyInstanceUid
+                }, {
+                    reactive: false
                 });
             }
 
-            var seriesInstanceUid = findSeriesByDescription(viewport.seriesDescription, study);
+            var seriesInstanceUid,
+                studyInstanceUid;
+            if (study) {
+                seriesInstanceUid = findSeriesByDescription(viewport.seriesDescription, study);
+                studyInstanceUid = study.studyInstanceUid;
+            }
 
             var window = {
                 viewportIndex: viewportIndex,
                 viewportRows: viewportRows,
                 viewportColumns: viewportColumns,
                 seriesInstanceUid: seriesInstanceUid,
-                studyInstanceUid: study.studyInstanceUid,
+                studyInstanceUid: studyInstanceUid,
                 currentImageIdIndex: 0,
                 options: viewport.options
             };
 
             ViewerWindows.insert(window);
+        });
+
+        // Remove unnecessary studies from ViewerStudies
+        // Remove any studies that have studyInstanceUids not in
+        // a list of the two that we need (current and prior)
+        ViewerStudies.remove({
+            studyInstanceUid: {
+                $nin: [
+                    currentStudy.studyInstanceUid,
+                    priorStudyInstanceUid
+                ]
+            }
         });
 
         // Update viewerData
@@ -413,6 +485,8 @@ function useHangingProtocol(applicableProtocol) {
         ViewerData[contentId].viewportColumns = viewportColumns;
         Session.set("ViewerData", ViewerData);
     });
+
+    return true;
 }
 
 WindowManager = {
