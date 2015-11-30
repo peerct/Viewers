@@ -108,6 +108,7 @@ Package.onUse(function (api) {
     api.addFiles('lib/toolManager.js', 'client');
     api.addFiles('lib/hangingprotocols.js', 'client');
     api.addFiles('lib/windowManager.js', 'client');
+    api.addFiles('lib/modalityDefaultViewport.js', 'client');
 
     //api.export('accountsConfig', 'client');
     api.export('addMetaData', 'client');
@@ -121,6 +122,8 @@ Package.onUse(function (api) {
     api.export('sortStudy', 'client');
     api.export('updateOrientationMarkers', 'client');
     api.export('getMammoHangingProtocolObject', 'client');
+    api.export('getModalityDefaultViewport', 'client');
+    api.export('setModalityDefaultViewportFunction', 'client');
 
     api.export('ViewerWindows', 'client');
 
