@@ -31,10 +31,10 @@ function resultDataToStudyMetadata(server, studyInstanceUid, resultData) {
 
         // If no series data exists in the seriesMap cache variable,
         // process any available series data
-        if(!series) {
+        if (!series) {
             series = {
-                seriesInstanceUid : seriesInstanceUid,
-                seriesNumber : instance[0x00200011],
+                seriesInstanceUid: seriesInstanceUid,
+                seriesNumber: instance[0x00200011],
                 instances: []
             };
 
@@ -62,8 +62,8 @@ function resultDataToStudyMetadata(server, studyInstanceUid, resultData) {
             uri: uri,
             instanceNumber: instance[0x00200013]
         });
-  });
-  return seriesList;
+    });
+    return seriesList;
 }
 
 /**

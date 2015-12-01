@@ -22,6 +22,7 @@ function getSourceImageInstanceUid(instance) {
     // This is a really poor workaround for now.
     // Later we should probably parse the whole sequence.
     var SourceImageSequence = instance[0x00082112];
+    log.info("SourceImageSequence " + SourceImageSequence);
     if (SourceImageSequence && SourceImageSequence.length) {
         return SourceImageSequence[0][0x00081155];
     }
@@ -80,6 +81,8 @@ function resultDataToStudyMetadata(server, studyInstanceUid, resultData) {
 
         var sopInstanceUid = instance[0x00080018];
 
+        log.info("instance");
+        log.info(instance);
         var instanceSummary = {
             imageType: instance[0x00080008],
             sopClassUid: instance[0x00080016],
@@ -103,7 +106,7 @@ function resultDataToStudyMetadata(server, studyInstanceUid, resultData) {
             rescaleIntercept: parseFloat(instance[0x00281052]),
             rescaleSlope: parseFloat(instance[0x00281053]),
             sourceImageInstanceUid: getSourceImageInstanceUid(instance),
-            laterality: instance[0x00281053],
+            laterality: instance[0x00200062],
             viewPosition: instance[0x00185101],
             numFrames: parseFloat(instance[0x00280008]),
             frameRate: parseFloat(instance[0x00181063])
