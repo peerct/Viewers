@@ -254,7 +254,7 @@ function updateWindows(data) {
     console.timeEnd('updateWindows');
 
     studiesReady.then(function() {
-        data.forEach(function(window) {
+        windowData.forEach(function(window) {
             ViewerWindows.insert(window);
         });
         console.timeEnd('updateWindows');
