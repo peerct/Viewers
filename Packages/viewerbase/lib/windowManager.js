@@ -94,13 +94,22 @@ function getHangingProtocol() {
 
     // Find the unique modalities in this study
     var modalities = [];
+    var seriesDescriptions = [];
     study.seriesList.forEach(function(series) {
         if (modalities.indexOf(series.modality) < 0) {
             modalities.push(series.modality);
         }
+
+        if (seriesDescriptions.indexOf(series.seriesDescription) < 0) {
+            seriesDescriptions.push(series.seriesDescription);
+        }
     });
 
-    if (modalities.indexOf('MG') > -1) {
+    if (modalities.indexOf('MG') > -1 &&
+        seriesDescriptions.indexOf('L CC')  > -1 &&
+        seriesDescriptions.indexOf('L MLO') > -1 &&
+        seriesDescriptions.indexOf('R CC')  > -1 &&
+        seriesDescriptions.indexOf('R MLO') > -1) {
         hangingProtocol = getMammoHangingProtocolObject();
         console.timeEnd('getHangingProtocol');
         return hangingProtocol;
@@ -156,7 +165,8 @@ function updateWindows(data) {
     ViewerWindows.remove({});
 
     // First, retrieve any saved viewport data from this tab
-    var contentId = Session.get('activeContentId');
+    //Session.get('activeContentId');
+    var contentId = $(".tabTitle.active a").data('target').replace('#','');
     var savedData = ViewerData[contentId];
 
     // Next, check if we are using a hanging protocol
@@ -254,6 +264,11 @@ function updateWindows(data) {
     console.timeEnd('updateWindows');
 
     studiesReady.then(function() {
+        if (contentId !== Session.get('activeContentId')) {
+            log.warn("Tab changed during study load, Stopping.");
+            return false;
+        }
+
         windowData.forEach(function(window) {
             ViewerWindows.insert(window);
         });
@@ -400,7 +415,7 @@ function applyStage(applicableProtocol, currentStudy) {
     });
 
     // Update viewerData
-    var contentId = Session.get('activeContentId');
+    var contentId = $(".tabTitle.active a").data('target').replace('#','');
     ViewerData[contentId].usingHP = true;
     ViewerData[contentId].viewportRows = viewportRows;
     ViewerData[contentId].viewportColumns = viewportColumns;
@@ -453,9 +468,16 @@ function useHangingProtocol(applicableProtocol) {
         return false;
     }
 
+    var contentId = Session.get('activeContentId');
+
     var studyInstanceUid;
     var modality = applicableProtocol.primaryModality;
     findMatchingStudies(studyInstanceUidList, currentStudy, modality, function(matchingStudy) {
+        if (contentId !== Session.get('activeContentId')) {
+            log.warn("Tab changed during study load, Stopping.");
+            return false;
+        }
+
         if (!matchingStudy) {
             return false;
         }
@@ -477,6 +499,10 @@ function useHangingProtocol(applicableProtocol) {
 }
 
 function findMatchingStudies(studyInstanceUidList, currentStudy, modality, doneCallback) {
+    if (!studyInstanceUidList.length) {
+        return;
+    }
+
     console.log(studyInstanceUidList);
     studyInstanceUid = studyInstanceUidList[0];
     var studyExists = ViewerStudies.findOne({
@@ -499,8 +525,12 @@ function findMatchingStudies(studyInstanceUidList, currentStudy, modality, doneC
             return false;
         }
 
-        var index = studyInstanceUidList.indexOf(study.studyInstanceUidList);
-        studyInstanceUidList = studyInstanceUidList.splice(index, 1);
+        var index = studyInstanceUidList.indexOf(study.studyInstanceUid);
+        studyInstanceUidList.splice(index, 1);
+
+        if (!studyInstanceUidList.length) {
+            return;
+        }
 
         findMatchingStudies(studyInstanceUidList, currentStudy, modality, doneCallback);
     });
