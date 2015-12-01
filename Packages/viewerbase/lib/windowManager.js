@@ -86,6 +86,7 @@ var hangingProtocol;
 var presentationGroup = 1;
 
 function getHangingProtocol() {
+    console.time('getHangingProtocol');
     var study = ViewerStudies.findOne();
     if (!study) {
         return;
@@ -101,6 +102,7 @@ function getHangingProtocol() {
 
     if (modalities.indexOf('MG') > -1) {
         hangingProtocol = getMammoHangingProtocolObject();
+        console.timeEnd('getHangingProtocol');
         return hangingProtocol;
     }
 }
@@ -149,6 +151,8 @@ function setCurrentPresentationGroup(groupNumber) {
 }
 
 function updateWindows(data) {
+    log.info("updateWindows");
+    console.time('updateWindows');
     ViewerWindows.remove({});
 
     // First, retrieve any saved viewport data from this tab
@@ -159,7 +163,14 @@ function updateWindows(data) {
     var usingHP = savedData.usingHP || Session.get('UseHangingProtocol');
 
     // Check if there is an applicable protocol
-    var applicableProtocol = getHangingProtocol();
+    var applicableProtocol;
+    if (ViewerData[contentId].applicableProtocol) {
+        applicableProtocol = ViewerData[contentId].applicableProtocol;
+    } else {
+        applicableProtocol = getHangingProtocol();
+        ViewerData[contentId].applicableProtocol = applicableProtocol;
+    }
+    
 
     // If we are using a hanging protocol, and no inputs have been given to this
     // function, we should apply the HP now
@@ -207,6 +218,7 @@ function updateWindows(data) {
 
 
     // Update viewerData
+    ViewerData[contentId].studies = ViewerStudies.find().fetch();
     ViewerData[contentId].usingHP = false;
     ViewerData[contentId].viewportRows = viewportRows;
     ViewerData[contentId].viewportColumns = viewportColumns;
@@ -214,7 +226,7 @@ function updateWindows(data) {
 
     var numViewports = viewportRows * viewportColumns;
 
-    var data = [];
+    var windowData = [];
     for (var i=0; i < numViewports; ++i) {
         if (viewportData && !$.isEmptyObject(viewportData.viewports[i])) {
             dataToUse = viewportData.viewports[i];
@@ -234,21 +246,25 @@ function updateWindows(data) {
             viewport: dataToUse.viewport
         };
 
-        data.push(window);
+        windowData.push(window);
     }
 
     // Here we will find out if we need to load any other studies into the viewer
-    var studiesReady = loadMissingStudies(data);
+    var studiesReady = loadMissingStudiesIntoCollection(windowData, ViewerStudies);
+    console.timeEnd('updateWindows');
+
     studiesReady.then(function() {
         data.forEach(function(window) {
             ViewerWindows.insert(window);
         });
+        console.timeEnd('updateWindows');
     }, function(error) {
         log.warn(error);
     });
+
 }
 
-function loadMissingStudies(data) {
+function loadMissingStudiesIntoCollection(data, collection) {
     // We will make a list of unique studyInstanceUids
     var uniqueStudyInstanceUids = [];
 
@@ -272,7 +288,7 @@ function loadMissingStudies(data) {
         uniqueStudyInstanceUids.push(studyInstanceUid);
 
         // Check that we already have this study in ViewerStudies
-        var loadedStudy = ViewerStudies.findOne({
+        var loadedStudy = collection.findOne({
             studyInstanceUid: studyInstanceUid
         }, {
             reactive: false
@@ -285,15 +301,15 @@ function loadMissingStudies(data) {
         deferredList.push(deferred);
 
         // If any of the associated studies is not already loaded, load it now
-        Meteor.call('GetStudyMetadata', studyInstanceUid, function(error, study) {
-            if (error) {
+        getStudyMetadata(studyInstanceUid, function(study) {
+            if (!study) {
                 deferred.reject();
             }
             // Sort the study's series and instances by series and instance number
             sortStudy(study);
 
             // Insert it into the ViewerStudies Collection
-            ViewerStudies.insert(study);
+            collection.insert(study);
             deferred.resolve();
         });
     });
@@ -346,7 +362,55 @@ function sameSeriesAsCurrent(study, currentStudy, modality) {
     return arraysEqual(currentStudyUniqueSeriesDescriptions, uniqueSeriesDescriptions, sortFirst);
 }
 
+function applyStage(applicableProtocol, currentStudy) {
+    var currentProtocolData = applicableProtocol.stages[presentationGroup - 1];
+
+    var viewportRows = currentProtocolData.rows;
+    var viewportColumns = currentProtocolData.columns;
+
+    var study;
+    var priorStudyInstanceUid;
+    currentProtocolData.viewports.forEach(function(viewport, viewportIndex) {
+        if (viewport.study === 'current') {
+            study = currentStudy;
+        } else if (viewport.study === 'prior') {
+            study = ViewerStudies.findOne({
+                windowManagerDescription: 'prior'
+            });
+        }
+
+        var seriesInstanceUid,
+            studyInstanceUid;
+        if (study) {
+            seriesInstanceUid = findSeriesByDescription(viewport.seriesDescription, study);
+            studyInstanceUid = study.studyInstanceUid;
+        }
+
+        var window = {
+            viewportIndex: viewportIndex,
+            viewportRows: viewportRows,
+            viewportColumns: viewportColumns,
+            seriesInstanceUid: seriesInstanceUid,
+            studyInstanceUid: studyInstanceUid,
+            currentImageIdIndex: 0,
+            options: viewport.options
+        };
+
+        ViewerWindows.insert(window);
+    });
+
+    // Update viewerData
+    var contentId = Session.get('activeContentId');
+    ViewerData[contentId].usingHP = true;
+    ViewerData[contentId].viewportRows = viewportRows;
+    ViewerData[contentId].viewportColumns = viewportColumns;
+    Session.set("ViewerData", ViewerData);
+
+    console.timeEnd('useHangingProtocol');
+}
+
 function useHangingProtocol(applicableProtocol) {
+    console.time('useHangingProtocol');
     log.info('Using hanging protocol');
 
     var currentPresentationGroup = presentationGroup;
@@ -355,11 +419,18 @@ function useHangingProtocol(applicableProtocol) {
     Session.set('WindowManagerPresentationGroup', presentationGroup);
     Session.set('UseHangingProtocol', Random.id());
 
-    var contentId = Session.get('activeContentId');
-    ViewerData[contentId].usingHP = true;
-    Session.set("ViewerData", ViewerData);
-
     var currentStudy = ViewerStudies.findOne({}, {reactive: false});
+
+    var priorStudy = ViewerStudies.findOne({
+        windowManagerDescription: 'prior'
+    });
+
+    if (priorStudy) {
+        applyStage(applicableProtocol, currentStudy);
+        return true;
+    }
+
+    var studyInstanceUidList = [];
 
     var otherStudies = WorklistStudies.find({
         patientId: currentStudy.patientId,
@@ -374,126 +445,65 @@ function useHangingProtocol(applicableProtocol) {
         sort: {
             studyDate: -1
         }
-    }).fetch();
+    }).forEach(function(study) {
+        studyInstanceUidList.push(study.studyInstanceUid);
+    });
 
-    if (!otherStudies.length) {
+    if (!studyInstanceUidList.length) {
         return false;
     }
 
-    var missingStudies = [];
     var studyInstanceUid;
-
-    otherStudies.forEach(function(study) {
-        var studyExists = ViewerStudies.findOne({
-            studyInstanceUid: study.studyInstanceUid
-        }, {
-            reactive: false
-        });
-
-        if (!studyExists) {
-            missingStudies.push({
-                studyInstanceUid: study.studyInstanceUid
-            });
+    var modality = applicableProtocol.primaryModality;
+    findMatchingStudies(studyInstanceUidList, currentStudy, modality, function(matchingStudy) {
+        if (!matchingStudy) {
+            return false;
         }
+
+        log.info('Matching study found');
+
+        sortStudy(matchingStudy);
+        matchingStudy.windowManagerDescription = "prior";
+        ViewerStudies.insert(matchingStudy);
+
+        if (presentationGroup !== currentPresentationGroup) {
+            log.warn('Presentation group changed while studies were loading');
+            return;
+        }
+
+        applyStage(applicableProtocol, currentStudy);
+        return true;
+    });
+}
+
+function findMatchingStudies(studyInstanceUidList, currentStudy, modality, doneCallback) {
+    console.log(studyInstanceUidList);
+    studyInstanceUid = studyInstanceUidList[0];
+    var studyExists = ViewerStudies.findOne({
+        studyInstanceUid: studyInstanceUid
+    }, {
+        reactive: false
     });
 
-    var studiesReady = loadMissingStudies(missingStudies);
-
-    studiesReady.then(function() {
-        if (presentationGroup !== currentPresentationGroup) {
-            log.warn('Presentation group changes while studies were loading');
+    if (studyExists) {
+        return;
+    }
+    
+    getStudyMetadata(studyInstanceUid, function(study) {
+        if (!study) {
             return;
         }
         
-        var currentProtocolData = applicableProtocol.stages[presentationGroup - 1];
+        if (sameSeriesAsCurrent(study, currentStudy, modality)) {
+            doneCallback(study);
+            return false;
+        }
 
-        var viewportRows = currentProtocolData.rows;
-        var viewportColumns = currentProtocolData.columns;
+        var index = studyInstanceUidList.indexOf(study.studyInstanceUidList);
+        studyInstanceUidList = studyInstanceUidList.splice(index, 1);
 
-        var study;
-        var priorStudyInstanceUid;
-        currentProtocolData.viewports.forEach(function(viewport, viewportIndex) {
-            if (viewport.study === 'current') {
-                study = currentStudy;
-            } else if (viewport.study === 'prior') {
-                var previousLoadedStudies = ViewerStudies.find({
-                    patientId: currentStudy.patientId,
-                    studyInstanceUid: {
-                        $ne: currentStudy.studyInstanceUid
-                    },
-                    studyDate: {
-                        $lt: currentStudy.studyDate
-                    }
-                }, {
-                    reactive: false,
-                    sort: {
-                        studyDate: -1
-                    }
-                }).fetch();
-
-                var previousMatchingStudies = [];
-                previousLoadedStudies.forEach(function(study) {
-                    if (!sameSeriesAsCurrent(study, currentStudy, applicableProtocol.primaryModality)) {
-                        return;
-                    }
-                    previousMatchingStudies.push(study);
-                });
-
-                if (!previousMatchingStudies || !previousMatchingStudies.length) {
-                    log.warn('No previous matching studies found for Prior!');
-                    previousMatchingStudies = [{
-                        studyInstanceUid: undefined
-                    }];
-                }
-
-                priorStudyInstanceUid = previousMatchingStudies[0].studyInstanceUid;
-                study = ViewerStudies.findOne({
-                    studyInstanceUid: priorStudyInstanceUid
-                }, {
-                    reactive: false
-                });
-            }
-
-            var seriesInstanceUid,
-                studyInstanceUid;
-            if (study) {
-                seriesInstanceUid = findSeriesByDescription(viewport.seriesDescription, study);
-                studyInstanceUid = study.studyInstanceUid;
-            }
-
-            var window = {
-                viewportIndex: viewportIndex,
-                viewportRows: viewportRows,
-                viewportColumns: viewportColumns,
-                seriesInstanceUid: seriesInstanceUid,
-                studyInstanceUid: studyInstanceUid,
-                currentImageIdIndex: 0,
-                options: viewport.options
-            };
-
-            ViewerWindows.insert(window);
-        });
-
-        // Remove unnecessary studies from ViewerStudies
-        // Remove any studies that have studyInstanceUids not in
-        // a list of the two that we need (current and prior)
-        ViewerStudies.remove({
-            studyInstanceUid: {
-                $nin: [
-                    currentStudy.studyInstanceUid,
-                    priorStudyInstanceUid
-                ]
-            }
-        });
-
-        // Update viewerData
-        ViewerData[contentId].usingHP = true;
-        ViewerData[contentId].viewportRows = viewportRows;
-        ViewerData[contentId].viewportColumns = viewportColumns;
-        Session.set("ViewerData", ViewerData);
+        findMatchingStudies(studyInstanceUidList, currentStudy, modality, doneCallback);
     });
-
-    return true;
 }
 
 WindowManager = {
