@@ -477,13 +477,16 @@ SequenceOfItems.prototype.readBytes = function(stream, sqlength, syntax) {
         }
 
         if (toRead) {
-          stream.increment(undef ? (-toRead-8) : -toRead);
+          stream.increment(undef ? (-toRead-8) : 0);
           itemStream = stream.more(toRead);//parseElements
           read += toRead;
           if (undef)
             stream.increment(8);
 
           elements.push(parseElements(itemStream, syntax));
+        }
+        if (!undefLength && (read == sqlength)) {
+          break;
         }
       }
     }
