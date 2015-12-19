@@ -24,7 +24,7 @@ Package.onUse(function (api) {
     api.addFiles('client/compatibility/nonTargetTool.js', 'client', {bare: true});
     api.addFiles('client/compatibility/biDirectionalTool.js', 'client', {bare: true});
     api.addFiles('client/compatibility/deleteLesionKeyboardTool.js', 'client', {bare: true});
-    api.addFiles('client/compatibility/measurementManagerDAL.js', 'client', {bare: true});
+    api.addFiles('client/compatibility/LesionManager.js', 'client', {bare: true});
 
     api.addFiles('client/components/lesionLocationDialog/lesionLocationDialog.html', 'client');
     api.addFiles('client/components/lesionLocationDialog/lesionLocationDialog.js', 'client');
@@ -85,14 +85,13 @@ Package.onUse(function (api) {
     api.export('removeToolDataWithMeasurementId', 'client');
     api.export('getTimepointObject', 'client');
     api.export('clearTools', 'client');
-    api.export('measurementManagerDAL', 'client');
+    api.export('LesionManager', 'client');
 
     // Export mathUtils functions
     api.export('sign','client');
     api.export('getLineIntersection','client');
     api.export('getDistance','client');
     api.export('getDistanceFromPointToLine','client');
-
 
     // Export client-side collections
     api.export('LesionLocations', 'client');

@@ -26,7 +26,7 @@ function setLesionNumberCallback(measurementData, eventData, doneCallback) {
 
     // Get a lesion number for this lesion, depending on whether or not the same lesion previously
     // exists at a different timepoint
-    var lesionNumber = measurementManagerDAL.getNewLesionNumber(measurementData.timepointID, isTarget=false);
+    var lesionNumber = LesionManager.getNewLesionNumber(measurementData.timepointID, isTarget=false);
     measurementData.lesionNumber = lesionNumber;
 
     // Set lesion number
@@ -63,7 +63,7 @@ function getLesionLocationCallback(measurementData, eventData) {
 
     // Find out if this lesion number is already added in the lesion manager for another timepoint
     // If it is, disable selector location
-    var locationUID = measurementManagerDAL.lesionNumberExists(measurementData);
+    var locationUID = LesionManager.lesionNumberExists(measurementData);
     if (locationUID) {
         // Add an ID value to the tool data to link it to the Measurements collection
         measurementData.id = 'notready';
@@ -75,7 +75,7 @@ function getLesionLocationCallback(measurementData, eventData) {
 
     // Disable selector location to prevent selecting a new location
     function disableLocationSelection(locationUID) {
-        var locationName = measurementManagerDAL.getLocationName(locationUID);
+        var locationName = LesionManager.getLocationName(locationUID);
         selectorLocation.find('option').each(function() {
             if ($(this).text() === locationName) {
                 // Select location in locations dropdown list
@@ -88,26 +88,27 @@ function getLesionLocationCallback(measurementData, eventData) {
 
     // Show the nonTargetLesion dialog above
     var dialogProperty =  {
-        top: eventData.currentPoints.page.y,
-        left: eventData.currentPoints.page.x,
         display: 'block'
     };
 
     // Device is touch device or not
     // If device is touch device, set position center of screen vertically and horizontally
-    if (isTouchDevice()) {
+    if (!eventData || isTouchDevice()) {
         // add dialogMobile class to provide a black,transparent background
         dialog.addClass("dialogMobile");
         dialogProperty.top = 0;
         dialogProperty.left = 0;
         dialogProperty.right = 0;
         dialogProperty.bottom = 0;
+    } else {
+        dialogProperty.top = eventData.currentPoints.page.y - dialog.outerHeight() - 40;
+        dialogProperty.left = eventData.currentPoints.page.x - dialog.outerWidth() / 2;
     }
 
     dialog.css(dialogProperty);
 }
 
-function changeLesionLocationCallback(measurementData, eventData, doneCallback) {
+changeNonTargetLocationCallback = function(measurementData, eventData, doneCallback) {
     Template.nonTargetLesionDialog.measurementData = measurementData;
     Template.nonTargetLesionDialog.doneCallback = doneCallback;
 
@@ -163,7 +164,7 @@ function changeLesionLocationCallback(measurementData, eventData, doneCallback) 
 var config = {
     setLesionNumberCallback: setLesionNumberCallback,
     getLesionLocationCallback: getLesionLocationCallback,
-    changeLesionLocationCallback: changeLesionLocationCallback
+    changeLesionLocationCallback: changeNonTargetLocationCallback
 };
 
 cornerstoneTools.nonTarget.setConfiguration(config);
@@ -219,7 +220,7 @@ Template.nonTargetLesionDialog.events({
             measurementData.measurementText = responseOptionId;
 
             // Adds lesion data to timepoints array
-            measurementManagerDAL.addLesionData(measurementData);
+            LesionManager.updateLesionData(measurementData);
         } else {
             Measurements.update(measurementData.id, {
                 $set: {

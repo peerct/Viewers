@@ -98,111 +98,74 @@ Template.viewer.onCreated(function() {
         self.subscribe('timepoints', patientId);
         self.subscribe('measurements', patientId);
 
-        if (!self.subscriptionsReady()) {
-            return;
-        }
+        if (self.subscriptionsReady()) {
+            ViewerStudies.find().observe({
+                added: function(study) {
+                    // TODO = Replace this whole section when we have a
+                    // timepoint-to-study association modal
 
-        ViewerStudies.find().observe({
-            added: function(study) {
-                var timepoint = Timepoints.findOne({timepointName: study.studyDate});
-                if (timepoint) {
-                    log.warn("A timepoint with that study date already exists!");
-                    return;
-                }
+                    // First, check if we have a timepoint related to this
+                    // study date already
+                    var timepoint = Timepoints.findOne({
+                        timepointName: study.studyDate
+                    });
 
-                var timepointID = uuid.v4();
-
-                var testTimepoint = Timepoints.findOne({});
-                if (testTimepoint && testTimepoint.patientId !== study.patientId) {
-                    log.warn("Timepoints collection related to the wrong subject");
-                    return;
-                }
-
-                log.info('Inserting a new timepoint');
-                Timepoints.insert({
-                    patientId: study.patientId,
-                    timepointID: timepointID,
-                    timepointName: study.studyDate
-                });
-            }
-        });
-
-        // This is used to re-add tools from the database into the
-        // Cornerstone ToolData structure
-        Measurements.find().observe({
-            added: function (data) {
-                if (data.toolDataInsertedManually === true) {
-                    return;
-                }
-
-                // Activate first measurements in image box as default if exists
-                if (!firstMeasurementsActivated) {
-                    var templateData = {contentId: Session.get("activeContentId")};
-                    // Activate measurement
-                    activateLesion(data._id, templateData);
-                    firstMeasurementsActivated = true;
-                }
-
-                log.info('Measurement added');
-
-                addMeasurementAsToolData(data);
-
-                updateRelatedElements(data.imageId);
-            },
-            changed: function(data) {
-                log.info('Measurement changed');
-
-                var toolType = data.isTarget ? 'lesion' : 'nonTarget';
-
-                var allEmpty = true;
-                Object.keys(data.timepoints).forEach(function(timepointId) {
-                    var timepointData = data.timepoints[timepointId];
-                    var imageId = timepointData.imageId;
-
-                    var removeMeasurement = false;
-                    if (data.isTarget === true) {
-                        // TODO= Check short axis length too!
-                        if (timepointData.longestDiameter === "") {
-                            removeMeasurement = true;
-                        } else {
-                            allEmpty = false;
-                        }
-                    } else {
-                        if (timepointData.response === "") {
-                            removeMeasurement = true;
-                        } else {
-                            allEmpty = false;
-                        }
+                    // If we do, stop here
+                    if (timepoint) {
+                        log.warn("A timepoint with that study date already exists!");
+                        return;
                     }
 
-                    if (removeMeasurement) {
-                        removeToolDataWithMeasurementId(imageId, toolType, data._id);
-                        updateRelatedElements(imageId);
-                    }
-                });
+                    // Next, check the first timepoint in the collection
+                    var testTimepoint = Timepoints.findOne({});
 
-                // If, after updating this Measurement, there are no
-                // timepoint entries with valid data, we should remove it from the Measurements
-                // collection
-                if (allEmpty === true) {
-                    // TODO=Prevent triggering of Measurement Removed hook?
-                    //Measurements.remove(data._id);
-                    Meteor.call("removeMeasurement", data._id, function(error, response) {
-                        console.log('Removed!');
+                    // If it relates to another subject, we need to stop here as well
+                    // because the tab may be changing.
+                    if (testTimepoint && testTimepoint.patientId !== study.patientId) {
+                        log.warn("Timepoints collection related to the wrong subject");
+                        return;
+                    }
+
+                    // Otherwise, we need to add a timepoint related to this study date
+                    log.info('Inserting a new timepoint');
+                    Timepoints.insert({
+                        patientId: study.patientId,
+                        timepointName: study.studyDate,
+                        timepointID: uuid.v4()
                     });
                 }
+            });
 
-            },
-            removed: function(data) {
-                log.info('Measurement removed');
-                console.log(data);
+            // This is used to re-add tools from the database into the
+            // Cornerstone ToolData structure
+            Measurements.find().observe({
+                added: function(data) {
+                    if (data.toolDataInsertedManually === true) {
+                        return;
+                    }
 
-                /*Object.keys(data.timepoints).forEach(function(timepointId) {
-                    var imageId = data.timepoints[timepointId].imageId;
-                    updateRelatedElements(imageId);
-                });*/
-            }
-        });
+                    // Activate first measurements in image box as default if exists
+                    if (!firstMeasurementsActivated) {
+                        var templateData = {
+                            contentId: Session.get("activeContentId")
+                        };
+
+                        // Activate measurement
+                        activateLesion(data._id, templateData);
+                        firstMeasurementsActivated = true;
+                    }
+
+                    log.info('Measurement added');
+
+                    addMeasurementAsToolData(data);
+
+                    updateRelatedElements(data.imageId);
+                },
+                changed: function(data) {
+                    log.info('Measurement changed');
+                }
+            });
+        }
     });
 
     OHIF.viewer.updateImageSynchronizer = new cornerstoneTools.Synchronizer("CornerstoneNewImage", cornerstoneTools.updateImageSynchronizer);
@@ -324,7 +287,7 @@ function handleMeasurementModified(e, eventData) {
     switch (eventData.toolType) {
         case 'nonTarget':
         case 'lesion':
-            measurementManagerDAL.updateTimepointData(measurementData);
+            LesionManager.updateLesionData(measurementData);
             break;
     }
 }
@@ -336,7 +299,10 @@ function handleMeasurementRemoved(e, eventData) {
     switch (eventData.toolType) {
         case 'nonTarget':
         case 'lesion':
-            var measurement = Measurements.findOne(measurementData.id, {reactive: false});
+            var measurement = Measurements.findOne(measurementData.id, {
+                reactive: false
+            });
+
             if (!measurement) {
                 return;
             }

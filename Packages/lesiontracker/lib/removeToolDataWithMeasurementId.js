@@ -2,6 +2,10 @@ removeToolDataWithMeasurementId = function(imageId, toolType, measurementId) {
     var toolState = cornerstoneTools.globalImageIdSpecificToolStateManager.toolState;
     
     // Find any related toolData
+    if (!toolState[imageId] || !toolState[imageId][toolType]) {
+        return;
+    }
+    
     var toolData = toolState[imageId][toolType].data;
     if (!toolData.length) {
         return;
