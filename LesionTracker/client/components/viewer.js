@@ -52,9 +52,6 @@ Template.viewer.onCreated(function() {
     OHIF.viewer.defaultHotkeys.lesion = "T"; // Target
     OHIF.viewer.defaultHotkeys.nonTarget = "N"; // Non-target
 
-    // Enable hotkeys
-    enableHotkeys();
-
     if (isTouchDevice()) {
         OHIF.viewer.tooltipConfig = {
             trigger: 'manual'
@@ -154,11 +151,56 @@ Template.viewer.onCreated(function() {
             },
             changed: function(data) {
                 log.info('Measurement changed');
-                updateRelatedElements(data.imageId);
+
+                var toolType = data.isTarget ? 'lesion' : 'nonTarget';
+
+                var allEmpty = true;
+                Object.keys(data.timepoints).forEach(function(timepointId) {
+                    var timepointData = data.timepoints[timepointId];
+                    var imageId = timepointData.imageId;
+
+                    var removeMeasurement = false;
+                    if (data.isTarget === true) {
+                        // TODO= Check short axis length too!
+                        if (timepointData.longestDiameter === "") {
+                            removeMeasurement = true;
+                        } else {
+                            allEmpty = false;
+                        }
+                    } else {
+                        if (timepointData.response === "") {
+                            removeMeasurement = true;
+                        } else {
+                            allEmpty = false;
+                        }
+                    }
+
+                    if (removeMeasurement) {
+                        removeToolDataWithMeasurementId(imageId, toolType, data._id);
+                        updateRelatedElements(imageId);
+                    }
+                });
+
+                // If, after updating this Measurement, there are no
+                // timepoint entries with valid data, we should remove it from the Measurements
+                // collection
+                if (allEmpty === true) {
+                    // TODO=Prevent triggering of Measurement Removed hook?
+                    //Measurements.remove(data._id);
+                    Meteor.call("removeMeasurement", data._id, function(error, response) {
+                        console.log('Removed!');
+                    });
+                }
+
             },
             removed: function(data) {
                 log.info('Measurement removed');
-                updateRelatedElements(data.imageId);
+                console.log(data);
+
+                /*Object.keys(data.timepoints).forEach(function(timepointId) {
+                    var imageId = data.timepoints[timepointId].imageId;
+                    updateRelatedElements(imageId);
+                });*/
             }
         });
     });
@@ -252,6 +294,11 @@ function addMeasurementAsToolData(data) {
     });
 }
 
+Template.viewer.onRendered(function() {
+    // Enable hotkeys
+    enableHotkeys();
+});
+
 Template.viewer.onDestroyed(function() {
     log.info("onDestroyed");
 
@@ -285,18 +332,16 @@ function handleMeasurementModified(e, eventData) {
 function handleMeasurementRemoved(e, eventData) {
     log.info('CornerstoneToolsMeasurementRemoved');
     var measurementData = eventData.measurementData;
-    var databaseEntry;
 
     switch (eventData.toolType) {
         case 'nonTarget':
         case 'lesion':
-            databaseEntry = Measurements.findOne(measurementData.id, {reactive: false});
-            if (!databaseEntry) {
+            var measurement = Measurements.findOne(measurementData.id, {reactive: false});
+            if (!measurement) {
                 return;
             }
 
-            // TODO= Fix this when we have Findings that relate to more than one viewport
-            Measurements.remove(databaseEntry._id);
+            clearMeasurementTimepointData(measurement._id, measurementData.timepointID);
             break;
     }
 }
