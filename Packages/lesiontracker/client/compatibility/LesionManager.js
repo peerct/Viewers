@@ -105,7 +105,12 @@ var LesionManager = (function() {
         }
     }
 
-    // Returns new lesion number according to timepointID
+    /**
+     * Returns new lesion number according to timepointID
+     * @param timepointID
+     * @param isTarget
+     * @returns {*}
+     */
     function getNewLesionNumber(timepointID, isTarget) {
         // Get all current lesion measurements
         var measurements = Measurements.find({
