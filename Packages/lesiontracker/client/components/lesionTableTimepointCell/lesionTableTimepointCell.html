@@ -1,9 +1,9 @@
 <template name="lesionTableTimepointCell">
     {{ #if hasDataAtThisTimepoint }}
         {{ #if isTarget }}
-            <td class="lesionTableTimepointCell target">{{displayData}}</td>
+            <td class="lesionTableTimepointCell target" tabindex="1">{{displayData}}</td>
         {{ else }}
-            <td class="lesionTableTimepointCell nonTarget">{{displayData}}</td>
+            <td class="lesionTableTimepointCell nonTarget" tabindex="2">{{displayData}}</td>
         {{ /if }}
     {{ else }}
     <td class="lesionTableTimepointCell empty"></td>

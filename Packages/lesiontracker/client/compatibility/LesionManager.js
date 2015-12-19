@@ -36,10 +36,15 @@ var LesionManager = (function() {
         }
 
         // Find the specific lesion to be updated
-        var existingMeasurement = Measurements.findOne({
-            lesionNumber: lesionData.lesionNumber,
-            isTarget: lesionData.isTarget
-        });
+        var existingMeasurement;
+        if (lesionData.id) {
+            existingMeasurement = Measurements.findOne(lesionData.id);
+        } else {
+            existingMeasurement = Measurements.findOne({
+                lesionNumber: lesionData.lesionNumber,
+                isTarget: lesionData.isTarget
+            });
+        }
 
         // Create a structure for the timepointData based
         // on this Lesion's toolData
@@ -61,7 +66,12 @@ var LesionManager = (function() {
         if (!existingMeasurement) {
             // Create a data structure for the Measurement
             // based on the current tool data
-            var measurement = lesionData;
+            var measurement = {
+                lesionNumber: lesionData.lesionNumber,
+                isTarget: lesionData.isTarget,
+                patientId: lesionData.patientId,
+                id: lesionData.id
+            };
 
             // Retrieve the location name given the locationUID
             if (lesionData.locationUID !== undefined) {
@@ -75,8 +85,11 @@ var LesionManager = (function() {
             // Set a flag to prevent duplication of toolData
             measurement.toolDataInsertedManually = true;
 
+            // Increment and store the Lesion Number for this Measurement
+            measurement.lesionNumber = Measurements.find().count() + 1;
+
             // Insert this into the Measurements Collection
-            // Save the ID into the toolData (not sure if this works?
+            // Save the ID into the toolData (not sure if this works?)
             measurement.id = Measurements.insert(measurement);
         } else {
             lesionData.id = existingMeasurement._id;
@@ -95,7 +108,11 @@ var LesionManager = (function() {
     // Returns new lesion number according to timepointID
     function getNewLesionNumber(timepointID, isTarget) {
         // Get all current lesion measurements
-        var measurements = Measurements.find({isTarget: isTarget},{sort: {lesionNumber: 1}}).fetch();
+        var measurements = Measurements.find({
+            isTarget: isTarget
+        }, {
+            sort: {lesionNumber: 1}
+        }).fetch();
 
         // If no measurements exist yet, start at 1
         if (!measurements.length) {
@@ -104,23 +121,24 @@ var LesionManager = (function() {
 
         // If measurements exist, find the last lesion number
         // from the given timepoint
-        var lesionNumberCounter = 0;
-        for (var i = 0; i < measurements.length; i++) {
+        var lesionNumberCounter = 1;
+        var numMeasurements = measurements.length;
+
+        // Search through Measurements to see which ones
+        // already have data for this Timepoint
+        for (var i = 0; i < numMeasurements; i++) {
             var measurement = measurements[i];
-            var timepoints = measurement.timepoints;
 
-            if (!timepoints[timepointID]) {
-                // Find lesion number for this timepointID
+            // If this measurement has no data for this Timepoint,
+            // use this as the current Measurement
+            if (!measurement.timepoints[timepointID]) {
                 return measurement.lesionNumber;
             }
 
-            if (timepoints[timepointID].longestDiameter === '') {
-                return measurement.lesionNumber;
-            } else {
-                lesionNumberCounter = lesionNumberCounter + 1;
-            }
+            lesionNumberCounter++;
         }
-        return lesionNumberCounter + 1;
+
+        return lesionNumberCounter;
     }
 
     /**

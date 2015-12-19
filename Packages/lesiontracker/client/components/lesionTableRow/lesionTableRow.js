@@ -9,9 +9,8 @@ function doneCallback(measurementData, deleteTool) {
     // opened by the Lesion Table, we should clear the data for
     // the specified Timepoint Cell
     if (deleteTool === true) {
-        showConfirmDialog(function() {
-            log.info('Confirm clicked!');
-            clearMeasurementTimepointData(measurementData.id, measurementData.timepointID);
+        Meteor.call("removeMeasurement", measurementData.id, function(error, response) {
+            console.log('Removed!');
         });
     }
 }
@@ -19,14 +18,11 @@ function doneCallback(measurementData, deleteTool) {
 Template.lesionTableRow.events({
     'dblclick .location': function() {
         log.info('Double clicked on Lesion Location cell');
-        // Search Measurements by lesion and timepoint
-        var currentMeasurement = Template.parentData(1);
 
-        // Create some fake measurement data
-        var measurementData = {
-            id: currentMeasurement._id,
-            timepointID: this.timepointID
-        };
+        var measurementData = this;
+
+        // TODO = Fix this weird issue? Need to set toolData's ID properly..
+        measurementData.id = this._id;
 
         changeLesionLocationCallback(measurementData, null, doneCallback);
     },

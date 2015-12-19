@@ -194,6 +194,7 @@ Template.lesionLocationDialog.events({
             measurementData.id = 'notready';
 
             // Link locationUID with active lesion measurementData
+            measurementData.location = locationObj.location;
             measurementData.locationId = locationObj.id;
             measurementData.locationUID = id;
 

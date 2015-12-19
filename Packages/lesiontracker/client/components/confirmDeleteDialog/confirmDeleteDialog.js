@@ -30,9 +30,12 @@ Template.confirmDeleteDialog.events({
         closeHandler();
     },
     'click #confirm': function() {
-        if (Template.confirmDeleteDialog.doneCallback) {
-            Template.confirmDeleteDialog.doneCallback();
+        var doneCallback = Template.confirmDeleteDialog.doneCallback;
+
+        if (doneCallback && typeof doneCallback === 'function') {
+            doneCallback();
         }
+
         closeHandler();
     },
     'keypress #confirmDeleteDialog': function(e) {

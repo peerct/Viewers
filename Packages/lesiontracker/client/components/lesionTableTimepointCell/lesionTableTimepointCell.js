@@ -37,10 +37,8 @@ function doneCallback(measurementData, deleteTool) {
     // opened by the Lesion Table, we should clear the data for
     // the specified Timepoint Cell
     if (deleteTool === true) {
-        showConfirmDialog(function() {
-            log.info('Confirm clicked!');
-            clearMeasurementTimepointData(measurementData.id, measurementData.timepointID);
-        });
+        log.info('Confirm clicked!');
+        clearMeasurementTimepointData(measurementData.id, measurementData.timepointID);
     }
 }
 
@@ -58,9 +56,16 @@ Template.lesionTableTimepointCell.events({
 
         // Create some fake measurement data
         var currentTimepointID = this.timepointID;
+
+        var timepointData = currentMeasurement.timepoints[currentTimepointID];
         var measurementData = {
             id: currentMeasurement._id,
-            timepointID: currentTimepointID
+            timepointID: currentTimepointID,
+            response: timepointData.response,
+            imageId: timepointData.imageId,
+            handles: timepointData.handles,
+            seriesInstanceUid: timepointData.seriesInstanceUid,
+            studyInstanceUid: timepointData.studyInstanceUid
         };
 
         if (currentMeasurement.isTarget) {

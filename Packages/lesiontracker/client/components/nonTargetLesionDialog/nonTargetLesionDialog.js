@@ -69,6 +69,7 @@ function getLesionLocationCallback(measurementData, eventData) {
         measurementData.id = 'notready';
 
         measurementData.locationUID = locationUID;
+
         // Disable the selection of a new location
         disableLocationSelection(measurementData.locationUID);
     }
@@ -88,8 +89,8 @@ function getLesionLocationCallback(measurementData, eventData) {
 
     // Show the nonTargetLesion dialog above
     var dialogProperty =  {
-        top: eventData.currentPoints.page.y,
-        left: eventData.currentPoints.page.x,
+        top: eventData.currentPoints.page.y - dialog.outerHeight() - 40,
+        left: eventData.currentPoints.page.x - dialog.outerWidth() / 2,
         display: 'block'
     };
 
@@ -159,7 +160,7 @@ changeNonTargetLocationCallback = function(measurementData, eventData, doneCallb
     }
 
     dialog.css(dialogProperty);
-}
+};
 
 var config = {
     setLesionNumberCallback: setLesionNumberCallback,
