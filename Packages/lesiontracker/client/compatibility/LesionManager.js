@@ -11,7 +11,11 @@ var LesionManager = (function() {
      */
     function getLocationName(id) {
         var locationObject = PatientLocations.findOne(id);
-        return locationObject.location || "";
+        if (!locationObject || !locationObject.location) {
+            return '';
+        }
+        
+        return locationObject.location;
     }
 
     /**
@@ -40,12 +44,18 @@ var LesionManager = (function() {
         // Create a structure for the timepointData based
         // on this Lesion's toolData
         var timepointData = {
-            longestDiameter: lesionData.measurementText,
             seriesInstanceUid: lesionData.seriesInstanceUid,
             studyInstanceUid: lesionData.studyInstanceUid,
             handles: lesionData.handles,
             imageId: lesionData.imageId
         };
+
+        if (lesionData.isTarget === true) {
+            // TODO = Add short axis
+            timepointData.longestDiameter = lesionData.measurementText;
+        } else {
+            timepointData.response = lesionData.response;
+        }
 
         // If no such lesion exists, we need to add one
         if (!existingMeasurement) {

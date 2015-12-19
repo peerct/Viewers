@@ -88,21 +88,20 @@ function getLesionLocationCallback(measurementData, eventData) {
 
     // Show the nonTargetLesion dialog above
     var dialogProperty =  {
+        top: eventData.currentPoints.page.y,
+        left: eventData.currentPoints.page.x,
         display: 'block'
     };
 
     // Device is touch device or not
     // If device is touch device, set position center of screen vertically and horizontally
-    if (!eventData || isTouchDevice()) {
+    if (isTouchDevice()) {
         // add dialogMobile class to provide a black,transparent background
         dialog.addClass("dialogMobile");
         dialogProperty.top = 0;
         dialogProperty.left = 0;
         dialogProperty.right = 0;
         dialogProperty.bottom = 0;
-    } else {
-        dialogProperty.top = eventData.currentPoints.page.y - dialog.outerHeight() - 40;
-        dialogProperty.left = eventData.currentPoints.page.x - dialog.outerWidth() / 2;
     }
 
     dialog.css(dialogProperty);
@@ -142,20 +141,21 @@ changeNonTargetLocationCallback = function(measurementData, eventData, doneCallb
 
     // Show the nonTargetLesion dialog above
     var dialogProperty =  {
-        top: eventData.currentPoints.page.y,
-        left: eventData.currentPoints.page.x,
         display: 'block'
     };
 
     // Device is touch device or not
     // If device is touch device, set position center of screen vertically and horizontally
-    if (isTouchDevice()) {
+    if (!eventData || isTouchDevice()) {
         // add dialogMobile class to provide a black,transparent background
         dialog.addClass("dialogMobile");
         dialogProperty.top = 0;
         dialogProperty.left = 0;
         dialogProperty.right = 0;
         dialogProperty.bottom = 0;
+    } else {
+        dialogProperty.top = eventData.currentPoints.page.y - dialog.outerHeight() - 40;
+        dialogProperty.left = eventData.currentPoints.page.x - dialog.outerWidth() / 2;
     }
 
     dialog.css(dialogProperty);
@@ -206,22 +206,8 @@ Template.nonTargetLesionDialog.events({
             id = PatientLocations.insert({location: locationObj.location});
         }
 
-        if (!measurementData.id) {
-            // Add an ID value to the tool data to link it to the Measurements collection
-            measurementData.id = 'notready';
-
-            // Link locationUID with active lesion measurementData
-            measurementData.locationUID = id;
-
-            /// Set the isTarget value to true, since this is the target-lesion dialog callback
-            measurementData.isTarget = false;
-
-            // measurementText is set from location response list
-            measurementData.measurementText = responseOptionId;
-
-            // Adds lesion data to timepoints array
-            LesionManager.updateLesionData(measurementData);
-        } else {
+        if (measurementData.id) {
+            // Update the location data
             Measurements.update(measurementData.id, {
                 $set: {
                     location: locationObj.location,
@@ -229,7 +215,23 @@ Template.nonTargetLesionDialog.events({
                     locationUID: id
                 }
             });
+        } else {
+            // Add an ID value to the tool data to link it to the Measurements collection
+            measurementData.id = 'notready';
         }
+
+        // Link locationUID with active lesion measurementData
+        measurementData.locationUID = id;
+
+        /// Set the isTarget value to true, since this is the target-lesion dialog callback
+        measurementData.isTarget = false;
+
+        // measurementText is set from location response list
+        measurementData.measurementText = responseOptionId;
+        measurementData.response = responseOptionId;
+
+        // Adds lesion data to timepoints array
+        LesionManager.updateLesionData(measurementData);
 
         // Close the dialog
         closeHandler(dialog);
@@ -239,10 +241,12 @@ Template.nonTargetLesionDialog.events({
         var doneCallback = Template.nonTargetLesionDialog.doneCallback;
         var dialog = Template.nonTargetLesionDialog.dialog;
 
-        if (doneCallback && typeof doneCallback === 'function') {
-            var deleteTool = true;
-            doneCallback(measurementData, deleteTool);
-        }
+        showConfirmDialog(function() {
+            if (doneCallback && typeof doneCallback === 'function') {
+                var deleteTool = true;
+                doneCallback(measurementData, deleteTool);
+            }
+        });
 
         closeHandler(dialog);
     },

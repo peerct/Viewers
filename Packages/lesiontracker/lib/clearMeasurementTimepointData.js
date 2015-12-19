@@ -1,15 +1,25 @@
 clearMeasurementTimepointData = function(measurementId, timepointId) {
-    var lesionData = Measurements.findOne(measurementId);
+    var data = Measurements.findOne(measurementId);
 
     // Check that this Measurement actually contains data for this timepoint
-    if (!lesionData || !lesionData.timepoints[timepointId]) {
+    if (!data || !data.timepoints[timepointId]) {
         return;
     }
 
     // Clear the Measurement data for this timepoint
-    delete lesionData.timepoints[timepointId];
+    var imageId = data.timepoints[timepointId].imageId;
+    var toolType = data.isTarget ? 'lesion' : 'nonTarget';
+    removeToolDataWithMeasurementId(imageId, toolType, measurementId);
 
-    if (Object.keys(lesionData.timepoints).length === 0) {
+    // Update any viewports that are currently displaying this imageId
+    var enabledElements = cornerstone.getEnabledElementsByImageId(imageId);
+    enabledElements.forEach(function(enabledElement) {
+        cornerstone.updateImage(enabledElement.element);
+    });
+
+    delete data.timepoints[timepointId];
+
+    if (Object.keys(data.timepoints).length === 0) {
         Meteor.call("removeMeasurement", measurementId, function(error, response) {
             console.log('Removed!');
         });
@@ -17,7 +27,7 @@ clearMeasurementTimepointData = function(measurementId, timepointId) {
         // Update the Timepoint object of the Measurement document
         Measurements.update(measurementId, {
             $set: {
-                timepoints: lesionData.timepoints
+                timepoints: data.timepoints
             }
         });
     }

@@ -149,7 +149,7 @@ changeLesionLocationCallback = function(measurementData, eventData, doneCallback
             selected: true
         }
     });
-}
+};
 
 var config = {
     setLesionNumberCallback: setLesionNumberCallback,
@@ -224,10 +224,12 @@ Template.lesionLocationDialog.events({
         var doneCallback = Template.lesionLocationDialog.doneCallback;
         var dialog = Template.lesionLocationDialog.dialog;
 
-        if (doneCallback && typeof doneCallback === 'function') {
-            var deleteTool = true;
-            doneCallback(measurementData, deleteTool);
-        }
+        showConfirmDialog(function() {
+            if (doneCallback && typeof doneCallback === 'function') {
+                var deleteTool = true;
+                doneCallback(measurementData, deleteTool);
+            }
+        });
 
         closeHandler(dialog);
     },

@@ -53,6 +53,14 @@ Package.onUse(function (api) {
     api.addFiles('client/components/studyDateList/studyDateList.styl', 'client');
     api.addFiles('client/components/studyDateList/studyDateList.js', 'client');
 
+    api.addFiles('client/components/confirmDeleteDialog/confirmDeleteDialog.html', 'client');
+    api.addFiles('client/components/confirmDeleteDialog/confirmDeleteDialog.styl', 'client');
+    api.addFiles('client/components/confirmDeleteDialog/confirmDeleteDialog.js', 'client');
+
+    api.addFiles('client/components/nonTargetResponseDialog/nonTargetResponseDialog.html', 'client');
+    api.addFiles('client/components/nonTargetResponseDialog/nonTargetResponseDialog.styl', 'client');
+    api.addFiles('client/components/nonTargetResponseDialog/nonTargetResponseDialog.js', 'client');
+
     api.addFiles('client/components/timepointTextDialog/timepointTextDialog.html', 'client');
     api.addFiles('client/components/timepointTextDialog/timepointTextDialog.styl', 'client');
 
