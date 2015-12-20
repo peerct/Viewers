@@ -270,8 +270,13 @@ function loadSeriesIntoViewport(data, templateData) {
             // Check if the current active viewport in the Meteor Session
             // Is the same as the viewport in which the activation event was fired.
             // If it was, no changes are necessary, so stop here.
+            var element = eventData.element;
             var activeViewportIndex = Session.get('activeViewport');
-            var viewportIndex = $(".imageViewerViewport").index(eventData.element);
+            var viewportIndex = $(".imageViewerViewport").index(element);
+
+            // Reset the focus, even if we don't need to re-enable reference lines or prefetching
+            $(element).focus();
+
             if (viewportIndex === activeViewportIndex) {
                 return;
             }
@@ -308,11 +313,13 @@ function loadSeriesIntoViewport(data, templateData) {
         // that is used for updating reference lines, and enable reference lines for this viewport.
         if (OHIF.viewer.refLinesEnabled && imagePlane && imagePlane.frameOfReferenceUID) {
             OHIF.viewer.updateImageSynchronizer.add(element);
-            displayReferenceLines(element);
         }
 
+        // Set the active viewport based on the Session variable
+        // This is done to ensure that the active element has the current
+        // focus, so that keyboard events are triggered.
         if (viewportIndex === Session.get('activeViewport')) {
-            enablePrefetchOnElement(element);
+            setActiveViewport(element);
         }
 
         // Run any renderedCallback that exists in the data context
@@ -398,13 +405,11 @@ Meteor.startup(function() {
 });
 
 Template.imageViewerViewport.onRendered(function() {
-
     var templateData = Template.currentData();
     log.info("imageViewerViewport onRendered");
 
     // When the imageViewerViewport template is rendered
     var element = this.find(".imageViewerViewport");
-
 
     // Display the loading indicator for this element
     $(element).siblings('.imageViewerLoadingIndicator').css('display', 'block');
@@ -412,10 +417,6 @@ Template.imageViewerViewport.onRendered(function() {
     // Get the current active viewport index, if this viewport has the same index,
     // add the CSS 'active' class to highlight this viewport.
     var activeViewport = Session.get('activeViewport');
-    if (activeViewport === this.data.viewportIndex) {
-        $('#imageViewerViewports .viewportContainer').removeClass('active');
-        $(element).parents('.viewportContainer').addClass('active');
-    }
 
     // Create a data object to pass to the series loading function (loadSeriesIntoViewport)
     var data = {
@@ -455,23 +456,13 @@ Template.imageViewerViewport.onRendered(function() {
             }
             sortStudy(study);
             data.study = study;
+
             setSeries(data, seriesInstanceUid, templateData);
-            return;
         });
     }
 
     data.study = study;
     setSeries(data, seriesInstanceUid, templateData);
-
-    // Set the active viewport based on the Session variable
-    // This is done to ensure that the active element has the current
-    // focus, so that keyboard events are triggered.
-    //
-    // TODO= Check this. There is probably a better way to do this
-    // (or a way to avoid doing this unnecessarily)
-    var viewportIndex = Session.get('activeViewport');
-    var activeElement = $('.imageViewerViewport').get(viewportIndex);
-    setActiveViewport(activeElement);
 });
 
 Template.imageViewerViewport.onDestroyed(function() {

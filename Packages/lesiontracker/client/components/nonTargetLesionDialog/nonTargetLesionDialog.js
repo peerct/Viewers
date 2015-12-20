@@ -133,7 +133,6 @@ changeNonTargetLocationCallback = function(measurementData, eventData, doneCallb
     var selectorLocation = dialog.find("select#selectNonTargetLesionLocation");
     var selectorResponse = dialog.find("select#selectNonTargetLesionLocationResponse");
 
-    log.info(measurementData);
     selectorLocation.find("option:first").prop("selected", "selected");
     selectorResponse.find("option:first").prop("selected", "selected");
 
