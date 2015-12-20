@@ -161,8 +161,45 @@ Template.viewer.onCreated(function() {
 
                     updateRelatedElements(data.imageId);
                 },
-                changed: function(data) {
-                    log.info('Measurement changed');
+                removed: function(data) {
+                    // Check that this Measurement actually contains timepoint data
+                    if (!data.timepoints) {
+                        return;
+                    }
+
+                    // Get the Measurement ID and relevant tool so we can remove
+                    // tool data for this Measurement
+                    var measurementId = data._id;
+                    var toolType = data.isTarget ? 'lesion' : 'nonTarget';
+
+                    // Find the list of imageIds that needs to be updated
+                    var imageIds = [];
+                    Object.keys(data.timepoints).forEach(function(timepointID) {
+                        // Clear the toolData for this timepoint
+                        var imageId = data.timepoints[timepointID].imageId;
+                        removeToolDataWithMeasurementId(imageId, toolType, measurementId);
+
+                        // Add this imageId to the list to be updated
+                        // (if they are currently displayed)
+                        imageIds.push(imageId);
+                    });
+
+                    // Find the enabled Cornerstone elements currently displaying these image IDs
+                    var enabledElements = [];
+                    imageIds.forEach(function(imageId) {
+                        var elems = cornerstone.getEnabledElementsByImageId(imageId);
+                        enabledElements = enabledElements.concat(elems);
+                    });
+
+                    // Update each related viewport
+                    enabledElements.forEach(function(enabledElement) {
+                        // Skip thumbnails or other elements that are not primary viewports
+                        var element = enabledElement.element;
+                        if (!element.classList.contains('imageViewerViewport')) {
+                            return;
+                        }
+                        cornerstone.updateImage(element);
+                    });
                 }
             });
         }

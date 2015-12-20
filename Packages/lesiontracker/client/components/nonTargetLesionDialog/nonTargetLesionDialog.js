@@ -160,6 +160,51 @@ changeNonTargetLocationCallback = function(measurementData, eventData, doneCallb
     }
 
     dialog.css(dialogProperty);
+
+    var measurement = Measurements.findOne(measurementData.id);
+    if (!measurement) {
+        return;
+    }
+
+    LesionLocations.update({},
+        {$set: {selected: false}},
+        { multi: true });
+
+    var currentLocation = LesionLocations.findOne({
+        id: measurement.locationId
+    });
+
+    if (!currentLocation) {
+        return;
+    }
+
+    LesionLocations.update(currentLocation._id, {
+        $set: {
+            selected: true
+        }
+    });
+
+    LocationResponses.update({},
+        {$set: {selected: false}},
+        { multi: true });
+
+    var response = measurement.timepoints[measurementData.timepointID].response;
+
+    // TODO = Standardize this. Searching by code probably isn't the best, we should use
+    // some sort of UID
+    var currentResponse = LocationResponses.findOne({
+        code: response
+    });
+
+    if (!currentResponse) {
+        return;
+    }
+
+    LocationResponses.update(currentResponse._id, {
+        $set: {
+            selected: true
+        }
+    });
 };
 
 var config = {

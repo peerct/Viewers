@@ -27,12 +27,6 @@ changeNonTargetResponse = function(measurementData, eventData, doneCallback) {
         }
     });
 
-    // Find the select option box
-    var selectorResponse = dialog.find("select#selectNonTargetLesionLocationResponse");
-
-    log.info(measurementData);
-    selectorResponse.find("option:first").prop("selected", "selected");
-
     // Show the nonTargetLesion dialog above
     var dialogProperty =  {
         display: 'block'
@@ -53,6 +47,29 @@ changeNonTargetResponse = function(measurementData, eventData, doneCallback) {
     }
 
     dialog.css(dialogProperty);
+
+    var measurement = Measurements.findOne(measurementData.id);
+    if (!measurement) {
+        return;
+    }
+
+    var response = measurement.timepoints[measurementData.timepointID].response;
+
+    // TODO = Standardize this. Searching by code probably isn't the best, we should use
+    // some sort of UID
+    var currentResponse = LocationResponses.findOne({
+        code: response
+    });
+
+    if (!currentResponse) {
+        return;
+    }
+
+    LocationResponses.update(currentResponse._id, {
+        $set: {
+            selected: true
+        }
+    });
 };
 
 Template.nonTargetResponseDialog.events({
